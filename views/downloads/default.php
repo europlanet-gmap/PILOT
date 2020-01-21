@@ -20,7 +20,7 @@ DOWNLOAD SPACECRAFT DATA FOR RESEARCH<a/><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a target="_blank" href="http://www.lpi.usra.edu/meetings/lpsc2007/pdf/2022.pdf"/>LPSC 2007 Abstract 2022: THE UNIFIED PLANETARY COORDINATES DATABASE<a/><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a target="_blank" href="http://www.lpi.usra.edu/meetings/lpsc2005/pdf/1369.pdf"/>LPSC 2005 Abstract 1369: UNIFIED PLANETARY COORDINATES SYSTEM: A SEARCHABLE DATABASE OF GEODETIC INFORMATION<a/><br/><br/>
   <h3><span style="background: #ffffff;">PILOT source and UPC Database</span></h3>
-&nbsp;&nbsp;&nbsp;&nbsp;To obtain a new version of PILOT or the UPC please contact the <a style="text-decoration:underline;" href="https://astrogeology.usgs.gov/maps/contact">USGS Astrogeology Science Center</a>.
+   &nbsp;&nbsp;&nbsp;&nbsp;PILOT is now available on the <a style="text-decoration:underline;" href="https://github.com/USGS-Astrogeology/PILOT">USGS Astrogeology Github Site</a>.
 <!--
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="http://astropedia.astrogeology.usgs.gov/download/Software/PILOT/pilot.tar.gz"/>PILOT source code</a><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="http://planetarymaps.usgs.gov/upcExport/" target="_blank"/>UPC Database Exports</a><br/>
