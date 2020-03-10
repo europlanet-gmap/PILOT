@@ -53,7 +53,7 @@ foreach($controller->scriptArray as $sVal) {
             </div>
 -->
             <div id="nasaLogo" >
-            <a href="https://astrogeology.usgs.gov/facilities/imaging-node-of-nasa-planetary-data-systems-pds">
+            <a href="https://www.usgs.gov/centers/astrogeology-science-center/science/cartography-and-imaging-sciences-node-nasa-planetary">
                 <img style="float:left;height:75px;" alt="PDS" src="images/pds_logo-inviso.png" />
                 <img style="float:left;" alt="NASA" src="images/nasa-logo.png" />
   
@@ -76,7 +76,6 @@ foreach($controller->scriptArray as $sVal) {
         <a href="<?php echo $baseURL; ?>">home</a>&nbsp;&nbsp;|&nbsp;&nbsp;
         <a href="<?php echo $baseURL; ?>index.php?view=downloads">downloads</a>&nbsp;&nbsp;|&nbsp;&nbsp;
         <a href="https://astrogeology.usgs.gov/maps/contact" >contact</a>&nbsp;&nbsp;|&nbsp;&nbsp;
-        <a href="https://isis.astrogeology.usgs.gov/fixit/projects/pilot" target="_blank">support</a>&nbsp;&nbsp;|&nbsp;&nbsp;
         <a href="<?php echo $baseURL; ?>index.php?view=faq">FAQ</a>
 
 
