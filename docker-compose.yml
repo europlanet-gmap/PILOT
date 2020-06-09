@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+  php:
+    image: pilot
+    container_name: pilot-php
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+
+  nginx:
+    image: nginx:stable
+    container_name: pilot-nginx
+    volumes:
+      - ./docker/nginx-docker-compose.conf:/etc/nginx/conf.d/default.conf:ro
+      - .:/var/www/pilot
+    ports:
+      - 80:80
+
