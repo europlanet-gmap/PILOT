@@ -15,7 +15,7 @@ COPY docker/php.ini.d/ $PHP_INI_DIR/conf.d/
 COPY . /var/www/pilot
 WORKDIR /var/www/pilot
 
-RUN git clone https://github.com/USGS-Astrogeology/AstroWebMaps.git astrowebmaps
-RUN cd astrowebmaps && make
+RUN git clone https://github.com/USGS-Astrogeology/AstroWebMaps.git
+RUN cd AstroWebMaps && make
 
 RUN mkdir log tmp && chown www-data:www-data log tmp
