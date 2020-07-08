@@ -6,12 +6,16 @@ RUN apt-get update && \
     apt-get install -y \
         git \
         libpq-dev \
+        make \
     && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/* && \
     docker-php-ext-install pgsql
 
 COPY docker/php.ini.d/ $PHP_INI_DIR/conf.d/
 COPY . /var/www/pilot
-
 WORKDIR /var/www/pilot
+
+RUN git clone https://github.com/USGS-Astrogeology/AstroWebMaps.git
+RUN cd AstroWebMaps && make
+
 RUN mkdir log tmp && chown www-data:www-data log tmp
