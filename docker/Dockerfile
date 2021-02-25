@@ -18,10 +18,10 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/* && \
     docker-php-ext-install pgsql
 
-COPY --from=awm-builder /AstroWebMaps AstroWebMaps
-
 COPY docker/php.ini.d/ $PHP_INI_DIR/conf.d/
 COPY . /var/www/pilot
 WORKDIR /var/www/pilot
+
+COPY --from=awm-builder /AstroWebMaps /var/www/pilot/AstroWebMaps
 
 RUN mkdir log tmp && chown www-data:www-data log tmp
