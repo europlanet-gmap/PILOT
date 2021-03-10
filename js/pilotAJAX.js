@@ -62,17 +62,17 @@ pilotAJAX.prototype.bigImage = function(id, thumbnailurl) {
 	      src: json['fullimageurl'],
 	      title: pilotSearch.getTitle(id),
 	      id: 'upcFootprintImage'+id,
-	      "class": 'upcThumbnailFootprint',
-	      load: function() {
+	      "class": 'upcThumbnailFootprint'
+	  }).appendTo('#pilotBigImageContainer');
+          $('#upcFootprintImage'+id).on("load", function() {
 		var newH = (this.height > ($(window).height() - 180)) ? $(window).height() - 180 : this.height;
 		var newW = ((this.width + 100) < ($(window).width() - 300)) ? this.width + 100 : $(window).width() - 300;
 		$('#pilotBigImageContainer').css('height', newH);
 		$('#pilotBigImageContainer').css('width', newW);
 		$('#pilotBigImage').css('width', newW);
 		$('#pilotBigImage').css('right', 100);
-	      }
-	  }).appendTo('#pilotBigImageContainer');
-	}
+	      });
+        }
       }
     });
     this.image(id, thumbnailurl);
@@ -135,24 +135,25 @@ pilotAJAX.prototype.image = function(id, thumbnailurl) {
   $(c).html(close);
   pilotLockout.on('lilImage');
   $("<img/>", {
-      load: function() {
-	pilotSearch.loadStart();
-	var nearWidth = '48%';
-	var farWidth = '52%';
-	var space = $('#right').width();
-	if ((space * .4) > this.width) {
-	   farWidth = String(this.width + 75) + 'px';
-	   nearWidth = String(space - this.width - 80)   + 'px';
-	}
-	$('#farRight').css('display','block');
-	$('#nearRight').animate({width: nearWidth}, 1000, function(){});
-	$('#farRight').animate({width: farWidth}, 1000, function(){pilotSearch.loadComplete(id);pilotLockout.off('lilImage');});
-      },
       src: thumbnailurl,
       title: pilotSearch.getTitle(id),
       id: 'upcFootprintImage'+id,
       "class": 'upcThumbnailFootprint'
     }).appendTo(c);
+
+  $('#upcFootprintImage'+id).on("load", function() {
+    pilotSearch.loadStart();
+    var nearWidth = '48%';
+    var farWidth = '52%';
+    var space = $('#right').width();
+    if ((space * .4) > this.width) {
+      farWidth = String(this.width + 75) + 'px';
+      nearWidth = String(space - this.width - 80)   + 'px';
+    }
+    $('#farRight').css('display','block');
+    $('#nearRight').animate({width: nearWidth}, 1000, function(){});
+    $('#farRight').animate({width: farWidth}, 1000, function(){pilotSearch.loadComplete(id);pilotLockout.off('lilImage');});
+  });
 };
 
 

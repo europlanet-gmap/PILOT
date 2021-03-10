@@ -65,8 +65,6 @@ foreach($controller->scriptArray as $sVal) {
 	</div>
  </div>
 
-
-
   <?php include dirname(__FILE__) . '/views/' . $controller->view . "/default.php"; ?>
 
   <?php include dirname(__FILE__) . '/views/' . $controller->view . "/panel.php"; ?>

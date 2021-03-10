@@ -79,15 +79,6 @@ $planetArray = array('MERCURY','VENUS','EARTH','MARS','JUPITER','SATURN','SMALL 
      </td></tr>
     </table>
 
-<!--
-         <input type="button" name="upcSetBoundingBoxButton" id="pilotBBViewport" style="margin: 0px 10px 0px 5px;" id="upcSetBoundingBoxButton" value="Use Viewport" onclick="astroMap.boundingBoxDrawer.drawFromMapExtent();" /> 
--->
-<!-- <div class="upcSmallGray">Well Known Text (0-360&#176;, Positive East)</div>
-       <textarea name='astroBBWKT' class='upcTextArea' id="astroBBWKT" cols="28" rows="2" onchange="astroMap.boundingBoxDrawer.drawFromForm();"></textarea>
-          <span class="upcSmallGray">Union Type:</span>
-          <input type="radio" name="queryType" style="margin:0px 2px 5px 10px;" value="within" <?php echo $defaultQueryTypeWithin; ?>/><span class="upcquerySubTitleSmall">Within </span>
-          <input type="radio" name="queryType" style="margin:0px 2px 5px 5px;" value="intersects" <?php echo $defaultQueryTypeIntersects; ?> /><span class="upcquerySubTitleSmall">Intersect </span>
--->
 
 
   </div><!--mapTabl-->
@@ -120,30 +111,31 @@ $planetArray = array('MERCURY','VENUS','EARTH','MARS','JUPITER','SATURN','SMALL 
       $( "#tabs" ).tabs({active: 1, fx: [{opacity:'toggle', duration:'fast'}] });
 <?php }?>
 
-      $( "#tabs" ).tabs({
-	show: function(event, ui) {
-	    switch (ui.panel.id) {
-	    case "mapTab":
-	      showMap();
-	      break;
-	    case "constrainTab":
-	      showConstrain();
-	      break;
-	    case "solarSystemTab":
-	      showSolarSystem();
-	      break;
-	    case "stereoTab":
-	      showStereo();
-	      break;
-	    }
-	  }
-	})
+$( "#tabs" ).tabs({
+  beforeActivate: function (event, ui) {
+      switch(ui.newPanel.attr('id')) {
+      case "mapTab":
+	showMap();
+	break;
+      case "constrainTab":
+	showConstrain();
+	break;
+      case "solarSystemTab":
+	showSolarSystem();
+	break;
+      case "stereoTab":
+	showStereo();
+	break;
+      }
+    }
+  });
 	$("#tabs").tabs('disable',2);
 	$("#tabs").tabs('disable',3);
 	$("#tabs").tabs('disable',4);
 	$("#pilotBigImage").draggable({handle:'span'});
 	$("#pilotStats").draggable({handle:'#pilotStatsDragImage'});
 
+        showSolarSystem();
   <?php
   echo isset($totalLoad) ? $totalLoad : '';
   ?>
@@ -189,6 +181,7 @@ window.onload = function() {
   $('<img/>')[0].src = "images/wrench-set.gif";
 
   if (initTarget != '') { pilotSearch.enable(initTarget);}
+
 }
 </script>
 

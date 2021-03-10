@@ -89,7 +89,7 @@ PilotStereo.prototype.close = function() {
     this.trashed = [];
     $('#stereoTab').html('');
     if ($('#tabs').tabs('option','active') == 4) {
-      $('#tabs').tabs('select', 1);
+      $('#tabs').tabs('option','active',1);
     }
   }
   $('#bottomRight').css('display','none');
@@ -198,7 +198,7 @@ PilotStereo.prototype.match = function(clean) {
   totalN = Number($('#totalNumber').val());
 
   //make tab
-  $('#tabs').tabs('select', 4);
+  //$('#tabs').tabs('option','active',4);
 
   if (totalN == 0) {
     $('#stereoTab').html('<span class="orangeText"><br/><br/>Please retrieve search results before stereo matching!</span>');
@@ -355,7 +355,7 @@ PilotStereo.prototype.processComplete = function(data) {
 //
 PilotStereo.prototype.render = function(key) {
 
-  $('#tabs').tabs('select', 2);
+  $('#tabs').tabs('option','active',2);
   if (!this.astroVector) {
     this.astroVector = new AstroVector(astroMap, astroMap.vectorSource);
   }

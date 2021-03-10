@@ -28,6 +28,7 @@ function dateFormatToolTip(number) {
 
 function showSolarSystem(target) {
 
+console.log('showing solar system . . . ' + target);
   //seatch
   pilotSearch.clear();
   //status bar
@@ -126,7 +127,7 @@ function showSolarSystem(target) {
 
 function showConstrain(instrument) {
 
-  $('#tabs').tabs('select', 3);
+  //$('#tabs').tabs('option','active', 3);
   var missions = [];
   var mCheck = [];
   var navHTML = '';
@@ -401,8 +402,13 @@ function showMap() {
   };
 
   astroMap = new AstroMap(mapSettings, controlSettings, consoleSettings, null);
+
   featureCall=new pilotAJAX();
   featureCall.loadFeatureTypes(target);
+
+  setTimeout(function() {
+   astroMap.map.updateSize();
+  }, 100);
 }
 
 

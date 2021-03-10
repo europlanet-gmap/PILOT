@@ -193,7 +193,7 @@ PilotSearch.prototype.enable = function(target) {
   $('#missionsText').html(titleCase(target));
   $('#missionsIcon').attr('src', 'images/' + cleanStr(target).toLowerCase() + "-icon.png");
   $('#missionsIcon').css('display', 'inline');
-  $('#tabs').tabs('select', 1);
+  $('#tabs').tabs('option','active', 1);
   showMissions(target);
 };
 
@@ -410,7 +410,7 @@ PilotSearch.prototype.preload = function(json)  {
   toggleConstrain(i);
   var id = json['images'][0]['upcid'];
   this.show(json['images']);
-  $('#tabs').tabs('select', 2);
+  $('#tabs').tabs('option','active', 2);
   setTimeout("pilotSearch.info(" + id + ")",1000);
 };
 
@@ -451,7 +451,7 @@ PilotSearch.prototype.render = function(id, dontShowMap, dontCenter) {
     return;
   }
   if (!dontShowMap) {
-    $('#tabs').tabs('select', 2);
+    $('#tabs').tabs('option','active', 2);
     showMap();
   }
   $('#upcCarouselMapButton' + id).attr('src', 'images/globe-hot.gif');
@@ -758,7 +758,7 @@ PilotSearch.prototype.unHighlightFootprint = function(id) {
 
 
 PilotSearch.prototype.unRender = function(id) {
-  $('#tabs').tabs('select', 2);
+  $('#tabs').tabs('option','active', 2);
   this.astroVector.removeAndUnstore(this.imageArray[id]['index']);
   this.imageArray[id]['index'] = null;
   $('#upcCarouselMapButton' + id).attr('src', 'images/globe.gif');
