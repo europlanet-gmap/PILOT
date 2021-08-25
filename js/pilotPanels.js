@@ -376,7 +376,7 @@ function showMap() {
     defaultCenterLat: 0,
     defaultCenterLon: 180,
     //imagePath: 'AstroWebMaps/images/'
-    imagePath: '/astrowebmaps/images/',
+    imagePath: 'https://webmaps.astrogeology.usgs.gov/images/',
     projectionSwitchTrigger: pilotProjectionSwitchTrigger
   };
 
