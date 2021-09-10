@@ -453,6 +453,7 @@ pilotAJAX.prototype.powRequest = function(upcids) {
   $("<input type='hidden' name='londir' value='" + londir + "' />").appendTo("#pilotToPOWForm");
   $("<input type='hidden' name='londom' value='" + londom + "' />").appendTo("#pilotToPOWForm");
   $("<input type='hidden' name='lattype' value='" + lattype + "' />").appendTo("#pilotToPOWForm");
+  console.log($('#pilotToPOWForm').serializeArray());
   $('#pilotToPOWForm').submit();
 
 };
