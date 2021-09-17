@@ -53,13 +53,13 @@ pilotAJAX.prototype.bigImage = function(id, thumbnailurl) {
       type: 'POST',
       success: function(json) {
 	pilotLockout.off('bigImage');
-	if (!json || !json['fullimageurl'] || (json['fullimageurl'] == '')) {
+	if (!json || !json['browse'] || (json['browse'] == '')) {
 	  alert('No Image Found!');
 	} else {
 	  $('#pilotBigImage').css('display', 'block');
 	  $('#pilotBigImageContainer').html('');
 	  $("<img/>", {
-	      src: json['fullimageurl'],
+	      src: json['browse'].replace(/['"]+/g,''),
 	      title: pilotSearch.getTitle(id),
 	      id: 'upcFootprintImage'+id,
 	      "class": 'upcThumbnailFootprint',
@@ -172,28 +172,37 @@ pilotAJAX.prototype.info = function(id) {
 	       var tipText='';
 	       var productName='', productText='';
 	       var header = [];
-	       for (var item in json) {
+               skipKeys = ['emissionangle','err_flag','isisfootprint','incidenceangle','instrumentid','jsonkeywords','pdsproductid','phaseangle','targetid','upcid'];
+               titleSwaps = [{name: 'instrument_name', title: 'Instrument Name'},
+                             {name: 'instrument' ,title: 'Instrument'},
+                             {name: 'isisid', title: 'ISIS ID'},
+                             {name: 'maximumemission', title: 'Max Emission Angle'},
+                             {name: 'maximumincidence', title: 'Max Incidence Angle'},
+                             {name: 'maximumphase', title: 'Max Phase Angle'},
+                             {name: 'meangroundresolution', title: 'Mean Ground Resolution'},
+                             {name: 'minimumemission', title: 'Min Emission Angle'},
+                             {name: 'minimumincidence', title: 'Min Incidence Angle'},
+                             {name: 'minimumphase', title: 'Min Phase Angle'},
+                             {name: 'processdate', title: 'Process Date'},
+                             {name: 'solarlongitude', title: 'Solar Longitude'},
+                             {name: 'source', title: 'Source'},
+                             {name: 'spacecraft', title: 'Spacecraft'},
+                             {name: 'starttime', title: 'Start Time'},
+                             {name: 'system', title: 'System'},
+                             {name: 'target_name', title: 'Target'}]
+               for (var item in json) {
+                 if (skipKeys.includes(item)) {
+                   continue;
+                 }
+                 tKey = titleSwaps.findIndex(t => t.name == item);
+                 if (tKey > -1) {
+		   header[titleSwaps[tKey]['title']] = json[item];
+                   continue;
+                 }
 		 switch(item) {
-		 case 'Full Size Image':
-		 case 'Thumbnail Image':
-		 case 'instrumentid':
-		 case 'instrument':
-		   break;
 		 case 'productid':
 		   productName += json[item];
 		   productText = '<span class="upcBig"><b>Product ID:</b> ' + json[item] + '</span><br/>';
-		   break;
-		 case 'isisid':
-		   header['ISIS ID'] = json[item];
-		   break;
-		 case 'targetname':
-		   header['Target'] = json[item];
-		   break;
-		 case 'displayname':
-		   header['Instrument'] = json[item];
-		   break;
-		 case 'edr_source':
-		   header['EDR Source'] = json[item];
 		   break;
 		 case 'WKT':
 		 case 'Footprint':
@@ -204,10 +213,7 @@ pilotAJAX.prototype.info = function(id) {
 		     tipText = tipText + '<b>WKT:</b><div style="height:30px;overflow:auto;"> ' + json[item] + '</div>';
 		   }
 		   break;
-		 case 'edr_source':
-		   tipText = tipText + '<b>EDR:</b> ' + json[item] + '<br/>';
-		   break;
-		 default:
+		  default:
 		   tipText = tipText + "<b>"+ item + ':</b> ' + json[item] + '<br/>';
 		 }
 	       }

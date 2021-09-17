@@ -88,6 +88,18 @@ class StatsHelper {
   }
 
 
+function getJSONStats2($type) {
+
+    require_once(dirname(__FILE__) . '/../configure.php' );
+    date_default_timezone_set('America/Phoenix');
+    $config = new Config();
+    $upcStatsURL = ($type == 'target') ? $config->upcTargetStatsURL : $config->upcVolumeStatsURL;
+    $json = file_get_contents($upcStatsURL);
+    //print_r($json);
+    return($json);
+  }
+
+
 function getStats() {
 
     $statArray = array();

@@ -4,7 +4,8 @@
 $componentPath = "http://" . $_SERVER['SERVER_NAME'] . str_replace('//','/',dirname($_SERVER['PHP_SELF'])) . "/";
 $jsPath = $componentPath . "js/";
 $cssPath = $componentPath . "css/";
-$imagePath = $componentPath . "images/";
+//$imagePath = $componentPath . "images/";
+$imagePath = "images/";
 $mapLinkPath = "http://" . $_SERVER['SERVER_NAME'] . str_replace('//','/', dirname($_SERVER['PHP_SELF']));
 $linkPath = "http://" . $_SERVER['SERVER_NAME'] . str_replace('//','/',dirname($_SERVER['PHP_SELF']));
 $formAction = htmlentities("http://" . $_SERVER['SERVER_NAME'] . $_SERVER['PHP_SELF']);
@@ -107,6 +108,7 @@ $planetArray = array('MERCURY','VENUS','EARTH','MARS','JUPITER','SATURN','SMALL 
 <script type="text/javascript" >
 
   var statsJSON= <?php echo $controller->model->statsJSON; ?>;
+  var missionStatsJSON= <?php echo $controller->model->missionStatsJSON; ?>;
   var missionLinks= <?php echo $controller->model->missionLinks; ?>;
   var powURL= '<?php echo $controller->powURL; ?>';
   var initTarget = '<?php echo $controller->target; ?>';  

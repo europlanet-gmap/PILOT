@@ -74,11 +74,13 @@ function showSolarSystem(target) {
   var targetName = '';
   var targetTotal = [];
   var targetBarArray = [];
-  for (i in statsJSON) {
-      currentTargetName = String(statsJSON[i]['targetname']).toLowerCase();
+  var st = statsJSON[0]['json_agg'];
+  for (i in st) {
+      //console.log(st[i]);
+      currentTargetName = String(st[i]['displayname']).toLowerCase().replace(/\//g, '');
       targetNameCap = currentTargetName.charAt(0).toUpperCase() + currentTargetName.slice(1);
       if ((currentTargetName != null) && (targetName != currentTargetName)) {
-	planetKey = String(statsJSON[i]['system']).toUpperCase();
+	planetKey = String(st[i]['system']).toUpperCase();
 	currentType = (planetKey == currentTargetName.toUpperCase()) ? 'planet' : 'moon';
 	targetBar = '';
 	targetBar += '<span class="targetTitle" onclick="pilotSearch.enable(\''+ currentTargetName+ '\');" >'+ targetNameCap + '</span>';
@@ -94,7 +96,7 @@ function showSolarSystem(target) {
 	targetName = currentTargetName;
       }
       if (targetTotal[currentTargetName] == undefined) {targetTotal[currentTargetName] = 0;}
-      targetTotal[currentTargetName] = (Number(targetTotal[currentTargetName]) + Number(statsJSON[i]['total']));
+      targetTotal[currentTargetName] = (Number(targetTotal[currentTargetName]) + Number(st[i]['target_count']));
   }
 
   var planetOrder = ['MERCURY','VENUS','EARTH','MARS','JUPITER','SATURN','SMALL BODIES','URANUS','NEPTUNE'];
@@ -147,11 +149,13 @@ function showConstrain(instrument) {
     for (var i=0; i< missions.length; i++) {
       navHTML += '<li id="constrain' + missions[i]['id'] + '"><a href="#iTab' + missions[i]['id'] + '" ><img title="' + instruments[missions[i]['id']]['missionTitle'] + '" src="images/' + instruments[missions[i]['id']]['mission'] + '-icon.png" class="missionIcon" />' + missions[i]['name'] + '</a></li>';
       textHTML += '<div class="iTab" id="iTab' + missions[i]['id'] + '"></div>';
-      limitCall.limits(missions[i]['id']);
     }
     navHTML += '</ul>';
     $('#constrainTabs').html(navHTML + textHTML);
     $('#constrainTabs').tabs();
+    for (i=0; i< missions.length; i++) {
+      pilotConstrain.show(missions[i]['id']);
+    }
   } else {
     var cTabs = $('#constrainTabs').tabs();
     var cUl = cTabs.find("ul");
@@ -231,7 +235,7 @@ function showMissions(target) {
       return;
     }
   } else {
-    missionList = statsJSON;
+    missionList = missionStatsJSON[0]['json_agg'];
   }
   var iCount = 0;
   for (var i=0; i< missionList.length; i++) {
@@ -254,7 +258,8 @@ function showMissions(target) {
       }
       currentI = (missionList[i]['displayname']) ? missionList[i]['displayname'] : 'Untargeted';
       currentId = missionList[i]['instrumentid'];
-      currentT = Number(missionList[i]['total']) - Number(missionList[i]['errors']);
+      //currentT = Number(missionList[i]['total']) - Number(missionList[i]['errors']);
+      currentT = Number(missionList[i]['image_count']);
       currentE = Number(missionList[i]['errors']);
       currentIClean = cleanStr(currentI);
       instruments[currentId] = [];

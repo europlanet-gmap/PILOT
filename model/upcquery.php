@@ -8,8 +8,10 @@
 
 
 require_once(dirname(__FILE__) . '/../tools/databaseClass.php' );
-require_once(dirname(__FILE__) . '/targets_metaHelper.php' );
-require_once(dirname(__FILE__) . '/keywords_metaHelper.php' );
+require_once(dirname(__FILE__) . '/targets_helper.php' );
+require_once(dirname(__FILE__) . '/json_keywords_helper.php' );
+//require_once(dirname(__FILE__) . '/targets_metaHelper.php' );
+//require_once(dirname(__FILE__) . '/keywords_metaHelper.php' );
 
 
 class upcQuery {
@@ -65,7 +67,7 @@ class upcQuery {
 
     //create db connection
     $this->target = $target;
-    $this->db = new DatabasePG($target);
+    $this->db = new DatabasePG($target,true);
 
     $this->multiDBResult = false;
   }
@@ -97,7 +99,6 @@ class upcQuery {
       $this->whitelist = false;
     }
 
-
     //SET LIMIT
     $limitClause = '';
     $this->limitNumber = (isset($this->output) && ($this->output != '')) ? $config->maxQueryDownload : $this->render; 
@@ -111,18 +112,18 @@ class upcQuery {
 
 
     //INITIAL RESULT KEYS - used to determine columns displayed after pull
-    $this->resultKeys = array('productid', 'edr_source', 'edr_detached_label', 'footprint', 'isisid', 'instrument', 'displayname', 'thumbnailurl');
+    $this->resultKeys = array('productid', 'source', 'detached_label', 'footprint', 'isisid', 'instrument', 'displayname', 'thumbnailurl');
 
 
     //TARGET AND DATEFILES SETTINGS
     //$fromClause =  "FROM datafiles_w_footprints as d ";
-    $fromClause =  "FROM datafiles as d ";
+    $fromClause =  "FROM datafiles as d JOIN search_terms AS s ON (d.upcid = s.upcid) ";
     $targetSelect = '';
     $targetJoin = '';
     if (!isset($this->target) || ($this->target == '')) {
       //if no target, need to pull it. . . 
       $targetSelect = ', tm.targetname ';
-      $targetJoin = 'LEFT JOIN targets_meta tm ON (d.targetid = tm.targetid) '; 
+      $targetJoin = 'LEFT JOIN targets tm ON (d.targetid = tm.targetid) '; 
       $targetWhereClause='';
     } else if ($this->target == 'untargeted') {
       $targetWhereClause = 'AND d.targetid IS NULL ';
@@ -132,11 +133,14 @@ class upcQuery {
       $targetWhereClause = 'AND d.targetid= ' . $currentTargetId . ' ';
     }
 
+
     //GEO CLAUSE
-    $keywordsHelper = new KeywordsHelper($this->target);
-    $geoTypeId = $keywordsHelper->getTypeIdFromKeyword('isisfootprint');
-    $geoSelect = ", ST_AsText(geoTable.value) AS footprint ";
-    $geoJoin = 'LEFT JOIN meta_geometry AS geoTable ON (d.upcid = geoTable.upcid) AND geoTable.typeid=' . $geoTypeId . ' '; 
+    //$keywordsHelper = new KeywordsHelper($this->target);
+    //$geoTypeId = $keywordsHelper->getTypeIdFromKeyword('isisfootprint');
+    //$geoSelect = ", ST_AsText(geoTable.value) AS footprint ";
+    $geoSelect = ", ST_AsText(s.isisfootprint) AS footprint ";    
+    //$geoJoin = 'LEFT JOIN meta_geometry AS geoTable ON (d.upcid = geoTable.upcid) AND geoTable.typeid=' . $geoTypeId . ' '; 
+    $geoJoin = '';
     if ($this->wkt == $this->fullMapWKT || $this->wkt == '') {
       //no bounding box, js returned max box
       $geoWhereClause = '';
@@ -154,22 +158,24 @@ class upcQuery {
       //bb check
       $matchWKT = (!isset($this->astroBBDatelineWKT) || ($this->astroBBDatelineWKT == '')) ? $this->wkt :  $this->astroBBDatelineWKT;
       //$geoWhereClause = 'AND ' . $geoFunction . "(footprint, ST_GeomFromText('" . $matchWKT . "')) ";
-      $geoWhereClause = 'AND ' . $geoFunction . "(geoTable.value, ST_GeomFromText('" . $matchWKT . "')) ";
+      $geoWhereClause = 'AND ' . $geoFunction . "(s.isisfootprint, ST_GeomFromText('" . $matchWKT . "')) ";
     } 
+
 
     //INSTRUMENT CLAUSE
     $instrumentWhereClause ='';
-    $instrumentSelect = ',instruments_meta.instrument, instruments_meta.displayname ';
-    $instrumentJoin = 'JOIN instruments_meta ON (d.instrumentid = instruments_meta.instrumentid) ';
+    $instrumentSelect = ',i.instrument, i.displayname ';
+    //$instrumentJoin = 'JOIN instruments ON (d.instrumentid = instruments.instrumentid) ';
+    $instrumentJoin = 'JOIN instruments i ON (d.instrumentid = i.instrumentid) ';
+    //$this->mappedArray = array(3);
     if (!empty($this->mappedArray) || !empty($this->unmappedArray)) {
-      $keywordsHelper = new KeywordsHelper($this->target);
-      $mappedTypeId = $keywordsHelper->getTypeIdFromKeyword('error');
-      $mappedTypeTable = 'meta_boolean';
-      require_once(dirname(__FILE__) . '/instruments_metaHelper.php' );
+      //$keywordsHelper = new KeywordsHelper($this->target);
+      //$mappedTypeId = $keywordsHelper->getTypeIdFromKeyword('error');
+      //$mappedTypeTable = 'meta_boolean';
       $instrumentWhereClause = 'AND (';
       $instrumentsHelper = new InstrumentsHelper($this->target);
       $iArray = array_unique(array_merge($this->mappedArray, $this->unmappedArray));
-      $instrumentJoin .= 'JOIN ' . $mappedTypeTable . ' AS mappedGeometryTable ON (d.upcid = mappedGeometryTable.upcid) '; 
+      //$instrumentJoin .= 'JOIN ' . $mappedTypeTable . ' AS mappedGeometryTable ON (d.upcid = mappedGeometryTable.upcid) '; 
       foreach ($iArray as $iKey => $iVal) {
 	$currentInstrumentId = is_numeric($iVal) ? $iVal : $instrumentsHelper->getIdFromDisplayName($iVal);
 	$cleanInstrumentName = str_replace(' ','',$iVal);
@@ -177,27 +183,25 @@ class upcQuery {
 	$mappedSearch = in_array($iVal, $this->mappedArray);
 	$unmappedSearch = in_array($iVal, $this->unmappedArray);
 	if ($mappedSearch && !$unmappedSearch) {
-	  $instrumentWhereClause .= 'AND (mappedGeometryTable.typeid=' . $mappedTypeId . ' AND NOT mappedGeometryTable.value)) ';
+	  $instrumentWhereClause .= "AND s.err_flag = 'f') ";
 	} else if ($unmappedSearch && !$mappedSearch) {
-	  $instrumentWhereClause .= 'AND (mappedGeometryTable.typeid=' . $mappedTypeId . ' AND mappedGeometryTable.value)) ';
+	  $instrumentWhereClause .= "AND s.err_flag = 't') ";
 	} else if ($unmappedSearch && $mappedSearch) {
-	  $instrumentWhereClause .= 'AND (mappedGeometryTable.typeid=' . $mappedTypeId . ')) ';
+	  //$instrumentWhereClause .= ') ';
 	}
       }
       //$instrumentWhereClause .= ($instrumentWhereClause != '') ? ') ' : '';
       $instrumentWhereClause .=  ') ';
     }
 
+
     //THUMBNAIL CLAUSE
     $thumbnailWhereClause ='';$thumbnailSelect='';$thumbnailJoin='';
     if (true) {
-      $thumbnailKeyword = 'thumbnailurl';
-      $keywordsHelper = new KeywordsHelper($this->target);
-      $thumbnailMetaTable = $keywordsHelper->getMetaTableFromKeyword($thumbnailKeyword);
-      $thumbnailTypeId = $keywordsHelper->getTypeIdFromKeyword($thumbnailKeyword);
-      $thumbnailSelect = ", ('" . $this->thumbnailURL . "' || substring(thumbnailTable.value from 18)) AS thumbnailurl ";
-      $thumbnailJoin = 'LEFT JOIN ' . $thumbnailMetaTable . ' AS thumbnailTable ON (d.upcid = thumbnailTable.upcid) AND thumbnailTable.typeid=' . $thumbnailTypeId . ' '; 
-      //$thumbnailWhereClause = '';
+      $jsonKeywordsHelper = new JsonKeywordsHelper($this->target);
+      $thumbnailSelect = ", thumbnailTable.jsonkeywords::jsonb->'thumbnail' AS thumbnailurl ";
+      $thumbnailJoin = 'LEFT JOIN json_keywords AS thumbnailTable ON (d.upcid = thumbnailTable.upcid) '; 
+      $thumbnailWhereClause = '';
    }
 
     //ORDER BY CLAUSE
@@ -207,21 +211,28 @@ class upcQuery {
     $orderByClause = '';
     switch ($this->groupBy) {
     case 'instrument':
-      $orderByClause = 'ORDER BY instrument, productid ';
+      $orderByClause = 'ORDER BY i.instrument, s.pdsproductid ';
       break;
     case 'productid':
-      $orderByClause = 'ORDER BY productid ';
+    case 'pdsproductid':
+      $orderByClause = 'ORDER BY s.pdsproductid ';
       break;
     default:
       //keyword-based order
       $groupByKeyword = $this->groupBy;
-      $groupByMetaTable = KeywordsHelper::getMetaTableFromKeyword($groupByKeyword);
-      $groupByTypeId = KeywordsHelper::getTypeIdFromKeyword($groupByKeyword);
-      $orderByJoin = 'LEFT JOIN ' . $groupByMetaTable . ' AS orderby_' . $groupByKeyword . ' ON (d.upcid = orderby_' . $groupByKeyword . '.upcid) '; 
+      //$groupByMetaTable = KeywordsHelper::getMetaTableFromKeyword($groupByKeyword);
+      //$groupByTypeId = KeywordsHelper::getTypeIdFromKeyword($groupByKeyword);
+      //$orderByJoin = 'LEFT JOIN ' . $groupByMetaTable . ' AS orderby_' . $groupByKeyword . ' ON (d.upcid = orderby_' . $groupByKeyword . '.upcid) '; 
       //$orderByWhereClause = 'AND orderby_' . $groupByKeyword . '.typeid=' . $groupByTypeId . ' ';
-      $orderByJoin .= 'AND orderby_' . $groupByKeyword . '.typeid=' . $groupByTypeId . ' ';
-      $orderBySelect = ', orderby_' . $groupByKeyword . '.value AS ' . $groupByKeyword . ' ';
-      $orderByClause = 'ORDER BY orderby_' . $groupByKeyword . '.value ' . $this->groupDir . ' ';
+      //$orderByJoin .= 'AND orderby_' . $groupByKeyword . '.typeid=' . $groupByTypeId . ' ';
+      //$orderBySelect = ', orderby_' . $groupByKeyword . '.value AS ' . $groupByKeyword . ' ';
+      //$orderByClause = 'ORDER BY orderby_' . $groupByKeyword . '.value ' . $this->groupDir . ' ';
+
+      $orderByJoin = '';
+      $orderByWhereClause = '';
+      $orderBySelect = ', s.' . $groupByKeyword . ' ';
+      $orderByClause = 'ORDER BY s.' . $groupByKeyword . ' ' . $this->groupDir . ' ';
+
       if (!array_search($groupByKeyword, $this->resultKeys)) {
 	$this->resultKeys[] = $groupByKeyword;
       }
@@ -280,7 +291,8 @@ class upcQuery {
 
     //CHECK FOR ERROR TYPES
     $errorTypeWhereClause = '';
-    if (isset($this->errorTypesArray) && (count($this->errorTypesArray) > 0)) {
+    if (false) {
+    //if (isset($this->errorTypesArray) && (count($this->errorTypesArray) > 0)) {
       $errorTypeId = KeywordsHelper::getTypeIdFromKeyword('errortype');
       foreach ($this->errorTypesArray as $iKey => $iVal) {
 	$errorTypeWhereClause .= "AND ((d.instrumentid != " . $iKey . ") OR (d.upcid IN (SELECT err.upcid FROM meta_string err WHERE err.typeid = '" . $errorTypeId . "' AND ";
@@ -317,7 +329,7 @@ class upcQuery {
 	$oper = substr($keyword,-2);
 	$keyword = substr($keyword,0,-3);
 	$constraintKeyword = $keyword; //KeywordsHelper::getSpecificKeyword(strtolower(str_replace('_','',$keyword)), $oper, $instrumentId);
-	$constraintKeyword .= ($instrumentId > 0) ?  '_' . $instrumentId : ''; //suffix to protect against ambiguity
+	//$constraintKeyword .= ($instrumentId > 0) ?  '_' . $instrumentId : ''; //suffix to protect against ambiguity
 	if  (isset($constraintCompares[$constraintKeyword])) {
 	  $constraintCompares[$constraintKeyword] .= ' AND ';
 	} else {
@@ -335,16 +347,16 @@ class upcQuery {
 	}
 	switch($oper) {
 	case 'GT':
-	  $constraintCompares[$constraintKeyword] .=  'meta_' . $constraintKeyword . '.value ' . ' >= ' . $cValAdjust;
+	  $constraintCompares[$constraintKeyword] .=  'st_' . $constraintKeyword . '.' . $constraintKeyword . ' >= ' . $cValAdjust;
 	  break;
 	case 'LT':
-	  $constraintCompares[$constraintKeyword] .=  'meta_' . $constraintKeyword . '.value ' . ' <= ' . $cValAdjust;
+	  $constraintCompares[$constraintKeyword] .=  'st_' . $constraintKeyword . '.' . $constraintKeyword  . ' <= ' . $cValAdjust;
 	  break;
 	case 'EQ':
-	  $constraintCompares[$constraintKeyword] .=  'meta_' . $constraintKeyword . '.value ' . ' = ' . $cValAdjust;
+	  $constraintCompares[$constraintKeyword] .=  'st_' . $constraintKeyword . '.' . $constraintKeyword  . ' = ' . $cValAdjust;
 	  break;
 	case 'ST':
-	  $constraintCompares[$constraintKeyword] .= 'UPPER(meta_' . $constraintKeyword . ".value) SIMILAR TO '%" . strtoupper($cVal) . "%'"; 
+	  $constraintCompares[$constraintKeyword] .= 'UPPER(' . 'st_' . $constraintKeyword . '.' . $constraintKeyword . ") SIMILAR TO '%" . strtoupper($cVal) . "%'"; 
 	  break;
 	}
       }
@@ -352,29 +364,37 @@ class upcQuery {
       // **  note: made second loop because above parses compares, below joins - eg. centerincidence may have both < and >
       // **  note: added instrument to keyword because two identical keywords may apply to diff instruments
       foreach ($constraintCompares as $cKey => $cVal) {
+
 	//undo instrument again
 	$cKeywordCurrent = explode('_', $cKey);
 	$cKeywordOnly = $cKeywordCurrent[0]; 
 	$instrumentId = isset($cKeywordCurrent[1]) ? $cKeywordCurrent[1] : NULL;
+
 	//get table
-	$constraintRecord = KeywordsHelper::getRecordFromKeyword($cKeywordOnly, $instrumentId);
-	if ($constraintRecord['datatype'] == 'double') {$constraintRecord['datatype'] = 'precision';} //hack to deal with naming inconsistancy
+	//$constraintRecord = KeywordsHelper::getRecordFromKeyword($cKeywordOnly, $instrumentId);
+	//if ($constraintRecord['datatype'] == 'double') {$constraintRecord['datatype'] = 'precision';} //hack to deal with naming inconsistancy
 
 	//select
-	$constraintSelect .= ', meta_' . $cKey . '.value AS ' . $cKey . ' ';
+	$constraintSelect .= ', st_' . $cKey . '.' . $cKey . ' ';
 	if (!in_array($cKey,$this->resultKeys)) {
 	  $this->resultKeys[] = $cKey;
 	}
 	//joins/wheres
-	if (is_numeric($instrumentId) && ($instrumentId > 0)) {
-	  $constraintJoin .= 'LEFT JOIN (SELECT * FROM meta_' . $constraintRecord['datatype'] . ' WHERE typeid=' . $constraintRecord['typeid'] . ') AS meta_' . $cKey . ' ON (d.upcid = meta_' . $cKey . '.upcid) ';
-	  $constraintWhereClause .= 'AND ((d.instrumentid != ' . $instrumentId . ') OR (' . $cVal . ')) ';
-	} else {
+	//if (is_numeric($instrumentId) && ($instrumentId > 0)) {
+	  //$constraintJoin .= 'LEFT JOIN (SELECT * FROM search_terms WHERE typeid=' . $constraintRecord['typeid'] . ') AS meta_' . $cKey . ' ON (d.upcid = meta_' . $cKey . '.upcid) ';
+	  //$constraintWhereClause .= 'AND ((d.instrumentid != ' . $instrumentId . ') OR (' . $cVal . ')) ';
+	//  $constraintJoin .= 'JOIN search_terms AS st_' . $cKey . ' ON (d.upcid = st_' . $cKey . '.upcid) ';
+	//  $constraintWhereClause .= 'AND ((d.instrumentid != ' . $instrumentId . ') OR (' . $cVal . ')) ';
+	//} else {
 	  //use keyword only... not instrument specific
-	  $constraintJoin .= 'JOIN meta_' . $constraintRecord['datatype'] . ' as meta_' . $cKeywordOnly . ' ON (d.upcid = meta_' . $cKeywordOnly . '.upcid) ';
-	  $constraintWhereClause .= 'AND meta_' . $cKeywordOnly . '.typeid = ' . $constraintRecord['typeid'] . ' ';
+	  //$constraintJoin .= 'JOIN meta_' . $constraintRecord['datatype'] . ' as meta_' . $cKeywordOnly . ' ON (d.upcid = meta_' . $cKeywordOnly . '.upcid) ';
+	  //$constraintWhereClause .= 'AND meta_' . $cKeywordOnly . '.typeid = ' . $constraintRecord['typeid'] . ' ';
+	  //$constraintWhereClause .= 'AND (' .  $cVal . ') ';
+
+	  $constraintJoin .= 'JOIN search_terms AS st_' . $cKey . ' ON (d.upcid = st_' . $cKey . '.upcid) ';
 	  $constraintWhereClause .= 'AND (' .  $cVal . ') ';
-	}
+
+	  //}
       }
     }
 
@@ -397,7 +417,7 @@ class upcQuery {
 	}	
 	if ((substr($sVal, 0, 4) == 'edr:') || (substr($sVal, 0, 4) == 'EDR:')) {
 	  $idVal = trim(substr($sVal, 4));
-	  $idKey = 'edr_source';
+	  $idKey = 'source';
 	}
 	if ($idKey == 'upcid') {
 	  $idWhereFragment = "d." . $idKey . " = " . $idVal;
@@ -415,7 +435,7 @@ class upcQuery {
 
     //QUERY
     $this->queryText =  $hashSelect . 
-      "SELECT d.upcid, d.productid, d.edr_source, d.edr_detached_label, d.isisid, d.instrumentid " . $instrumentSelect . $targetSelect . $constraintSelect . $orderBySelect . $thumbnailSelect . $geoSelect .
+      "SELECT d.upcid, d.productid, d.source, d.detached_label, d.isisid, d.instrumentid " . $instrumentSelect . $targetSelect . $constraintSelect . $orderBySelect . $thumbnailSelect . $geoSelect .
       $fromClause .
       $instrumentJoin .
       $targetJoin . 
@@ -455,6 +475,8 @@ class upcQuery {
 
     //print('this->queryText:' . $this->queryText . '<br/>');
     //print('this->countText:' . $this->countText . '<br/>');
+    error_log('this->queryText:' . $this->queryText . ' ');
+    error_log('this->countText:' . $this->countText . ' ');
     return($this->queryText);
   }
 
@@ -473,6 +495,7 @@ class upcQuery {
     if (!$this->queryText) {
       $this->_buildQuery();
     }
+
 
     if ($this->queryText == '') return(0);
 
@@ -515,9 +538,9 @@ class upcQuery {
   function getTotal() {
 
     if (!$this->countText) {
-      $this->_buildQuery();
+    	$this->_buildQuery();
     }
-    
+
     //get total
     set_time_limit(0);
     $this->db->query($this->countText);
@@ -695,9 +718,9 @@ class upcQuery {
     //create wget lines
     foreach($this->result as $row) {
       //check for upcid filter
-      fwrite($fp, 'wget -nd ' . $row['edr_source'] . "\n");
-      if (isset($row['edr_detached_label'])) {
-	fwrite($fp, 'wget -nd ' . $row['edr_detached_label'] . "\n");
+      fwrite($fp, 'wget -nd ' . $row['source'] . "\n");
+      if (isset($row['detached_label'])) {
+	fwrite($fp, 'wget -nd ' . $row['detached_label'] . "\n");
       }
     }
 
@@ -721,7 +744,7 @@ class upcQuery {
     $output = array();
 
     if ($processCheck != '') {
-      require_once(dirname(__FILE__) . '/instruments_metaHelper.php' );
+      require_once(dirname(__FILE__) . '/instruments_helper2.php' );
       if (!empty($this->mappedArray) || !empty($this->unmappedArray)) {
 	$instrumentsHelper = new InstrumentsHelper($this->target);
 	$iArray = array_unique(array_merge($this->mappedArray, $this->unmappedArray));

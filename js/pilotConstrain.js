@@ -23,12 +23,14 @@ PilotConstrain.prototype.cleanId = function(oldId) {
 
 
 PilotConstrain.prototype.clear = function(id) {
+  console.log('pilotconstrain.clear. . . ');
   if (id) {
     var iDiv = '#iTab' + id;
     $(iDiv).html('');
-    var limitCall=new pilotAJAX();
-    limitCall.limits(id);
-    this.searchAlertOn();
+    //var limitCall=new pilotAJAX();
+    //limitCall.limits(id);
+    //showConstrain();
+    this.show(id);
   } else {
     if ($('#constrainTabs').data("tabs")) {
       $('#constrainTabs').tabs("destroy");
@@ -115,11 +117,35 @@ PilotConstrain.prototype.missionStats = function(id, name) {
 };
 
 
-PilotConstrain.prototype.show = function(json)  {
+PilotConstrain.prototype.show = function(id)  {
 
-  limits = json[0]; bands = json[1]; strings = json[2];
-  var id = limits[0].instrumentid;
+  //limits = json[0]; bands = json[1]; strings = json[2];
+  //var id = limits[0].instrumentid;
+  //var id = limits[0].instrumentid;
+  var target = $('#target').val();
+  var missionList = missionStatsJSON[0]['json_agg'];
+  for (var i=0; i< missionList.length; i++) {
+    if ((id == missionList[i]['instrumentid']) && (target == missionList[i]['targetname'].toLowerCase() )) {
+      var ms = missionList[i];
+      break;
+    }
+  }
+  var limits = [
+    {'typename': 'starttime', 'displayname': 'Start Time', 'description': 'The UTC data and time for the start of the exposure', 'maximum': ms['stop_date'].substring(0,10), 'minimum': ms['start_date'].substring(0,10)},
+    {'typename': 'solarlongitude', 'displayname': 'Solar Longitude', 'description': 'The longitude of the subsolar point', 'maximum': ms['max_solar_longitude'], 'minimum': ms['min_solar_longitude']},
+    {'typename': 'meangroundresolution', 'displayname': 'Mean Ground Resolution', 'description': 'Pixel resolution at the surface center image location', 'maximum': ms['max_mean_ground_resolution'], 'minimum': ms['min_mean_ground_resolution']},
+    {'typename': 'minimumphase', 'displayname': 'Minimum Phase Angle', 'description': 'Minimum value of the measurement of the relationship between the instrument viewing position and incident illumination (such as solar light)', 'maximum': ms['max_minimum_phase'], 'minimum': ms['min_minimum_phase']},
+    {'typename': 'maximumphase', 'displayname': 'Maximum Phase Angle', 'description': 'Maximum value of the measurement of the relationship between the instrument viewing position and incident illumination (such as solar light)', 'maximum': ms['max_maximum_phase'], 'minimum': ms['min_maximum_phase']},
+    {'typename': 'minimumincidence', 'displayname': 'Minimum Incidence Angle', 'description': 'Minimum angle between the local vertical at the intercept point (surface) and a vector from the intercept point to the sun', 'maximum': ms['max_minimum_incidence'], 'minimum': ms['min_minimum_incidence']},
+    {'typename': 'maximumincidence', 'displayname': 'Maximum Incidence Angle', 'description': 'Maximum angle between the local vertical at the intercept point (surface) and a vector from the intercept point to the sun', 'maximum': ms['max_maximum_incidence'], 'minimum': ms['min_maximum_incidence']},
+    {'typename': 'minimumemission', 'displayname': 'Minimum Emission Angle', 'description': 'Minimum angle between the surface normal vector at the intercept point and a vector from the intercept point to the spacecraft', 'maximum': ms['max_minimum_emission'], 'minimum': ms['min_minimum_emission']},
+    {'typename': 'maximumemission', 'displayname': 'Maximum Emission Angle', 'description': 'Maximum angle between the surface normal vector at the intercept point and a vector from the intercept point to the spacecraft', 'maximum': ms['max_maximumemission'], 'minimum': ms['min_maximum_emission']}
+           ];
+  //this.mappedSliders = ["starttime","solarlongitude","meangroundresolution","minimumphaseangle","maximumphaseangle","minimumincidenceangle","maximumincidenceangle","minimumemissionangle","maximumemissionangle"];
   var iDiv = 'iTab' + id;
+
+  var iDivExist = document.getElementById(iDiv);
+
   var eL = $('<div/>', {id: iDiv + 'L', "class": 'slideLeft'}).appendTo('#' + iDiv);
   var eR = $('<div/>', {id: iDiv + 'R', "class": 'slideRight'}).appendTo('#' + iDiv);
   var sliderE = '';
@@ -128,18 +154,18 @@ PilotConstrain.prototype.show = function(json)  {
   //$('<span/>', {html: 'Id Search: '}).appendTo(eR);
   //$('<input/>', {type: 'text', size: '20', name: id + '__searchId', id: id + '__searchId'}).appendTo(eR);
   //$('#' + id + '__searchId').change(function() {pilotConstrain.searchAlertOn();});
-  for (var main in this.mappedSliders) {
+  //for (var main in this.mappedSliders) {
    for (var item in limits) {
-    if (limits[item].typename == this.mappedSliders[main]) {
+    //if (limits[item].typename == this.mappedSliders[main]) {
       if (limits[item].typename == 'meangroundresolution') {
 	limits[item].displayname += ' (mpp)';
       }
       this.makeSlider(eL, id, limits[item], true);
-      break;
-    }
+      //break;
+    //}
    }
-  }
-
+  //}
+  /*
   var sLength = strings.length;
   if (sLength > 1) {
     $('<span/>', {'class': 'advText', id: "advText1", value: '', html: 'Identifier Text Match: '}).appendTo(eR);
@@ -173,7 +199,7 @@ PilotConstrain.prototype.show = function(json)  {
       }
     }
   }
-
+/*
   var bLength = bands.length;
   if (bLength > 1) {
     $('<span/>', {html: '<h3 class="advTitleSelects">Filter (center wavelength) </h3><span class="orangeText">Select one or more. . . </span>'}).appendTo(eR);
@@ -190,8 +216,8 @@ PilotConstrain.prototype.show = function(json)  {
       $('#filter' + id).append($("<option></option>").attr("value",  bands[i]['filter']).text(bands[i]['filter'] + '  (' + bands[i]['centerwave'] + ')'));
     }
   }
-
-  this.errorPanel(id);
+*/
+  //this.errorPanel(id);
 
   $('<input/>', {type: 'button', value: 'Clear Settings', id: 'advClearButton' + id, "class": 'advClearButton'}).appendTo(eR);
   $('#advClearButton' + id).click(function() {pilotConstrain.clear(id);});

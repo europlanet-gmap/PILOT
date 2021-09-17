@@ -173,9 +173,11 @@ PilotSearch.prototype.downloadSelect = function() {
 
 PilotSearch.prototype.enable = function(target) {
 
+  //console.log('enabling '+ target);
   found = false;
-  for (i in statsJSON) {
-      if (target == String(statsJSON[i]['targetname']).toLowerCase()) {
+  var st = statsJSON[0]['json_agg'];
+  for (i in st) {
+      if (target == String(st[i]['displayname']).toLowerCase()) {
 	found = true;
       }
   }
@@ -603,8 +605,9 @@ PilotSearch.prototype.show = function(footprints)  {
   if (groupBy.indexOf("resolution") != -1) {units = 'm/p';}
   $('#panelGroupBy').removeAttr("disabled");
   for(var fKey in footprints) {
+    //console.log(footprints[fKey]);
       upcid = footprints[fKey]['upcid'];
-      thumb = (footprints[fKey]['thumbnailurl']) ? footprints[fKey]['thumbnailurl'] : ((footprints[fKey]['Thumbnail Image']) ? footprints[fKey]['Thumbnail Image'] : noimageURL);
+      thumb = (footprints[fKey]['thumbnailurl']) ? footprints[fKey]['thumbnailurl'].replace(/['"]+/g,'') : ((footprints[fKey]['Thumbnail Image']) ? footprints[fKey]['Thumbnail Image'] : noimageURL);
       ImageInfoHTML = '';
       this.imageArray[upcid] = {upcid: upcid, productid: footprints[fKey]['productid'], thumbnailurl: thumb, footprint: footprints[fKey]['footprint'], edr_source: footprints[fKey]['edr_source'], instrumentid: footprints[fKey]['instrumentid']};
       var newTitle = i + '. ' + footprints[fKey]['displayname'] + ': ' + footprints[fKey]['productid'];

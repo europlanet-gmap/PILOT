@@ -7,13 +7,14 @@
 */
 
 require_once(dirname(__FILE__) . "/model/upcquery.php"); 
-require_once(dirname(__FILE__) . '/model/targets_metaHelper.php');
+//require_once(dirname(__FILE__) . "/model/upcquery2.php"); 
+//require_once(dirname(__FILE__) . '/model/targets_metaHelper.php');
 require_once(dirname(__FILE__) . '/model/limits_helper.php');
 require_once(dirname(__FILE__) . '/model/bands_helper.php');
 require_once(dirname(__FILE__) . '/model/stats_helper.php');
 require_once(dirname(__FILE__) . '/model/histogram_helper.php');
 require_once(dirname(__FILE__) . '/model/stereo_helper.php');
-require_once(dirname(__FILE__) . '/model/datafiles_metaHelper.php');
+require_once(dirname(__FILE__) . '/model/datafiles_helper2.php');
 require_once(dirname(__FILE__) . '/model/keywords_metaHelper.php');
 require_once(dirname(__FILE__) . '/tools/loggingClass.php');
 require_once(dirname(__FILE__) . '/tools/nomenclatureClass.php');
@@ -63,6 +64,7 @@ class UpcqueryController {
 
     //model
     $this->model = new upcQuery($this->target);
+    //$this->model2 = new upcQuery2($this->target);
 
     switch ($this->view) {
     case 'downloads':
@@ -79,8 +81,10 @@ class UpcqueryController {
     default:
       $this->view = 'planets';
       $statsHelper = new StatsHelper();
-      $this->model->stats = $statsHelper->getStats();
-      $this->model->statsJSON = $statsHelper->getJSONStats();
+      //$this->model->stats = $statsHelper->getStats();
+      //$this->model->statsJSON = $statsHelper->getJSONStats();
+      $this->model->statsJSON = $statsHelper->getJSONStats2('target');
+      $this->model->missionStatsJSON = $statsHelper->getJSONStats2('volume');
       $instrumentsHelper = new InstrumentsHelper();
       $this->model->missionLinks = $instrumentsHelper->getMissionLinks();
 
@@ -182,8 +186,8 @@ class UpcqueryController {
     require_once(dirname(__FILE__) . '/model/hashResults.php' );
     $hash = new hashResults($this->model);
     $returnData['images'] = $hash->get();    
-    //$returnData['footprints'] = $hash->footprints;
-    //$returnData['resultKeys'] = $this->model->resultKeys;
+    $returnData['footprints'] = $hash->footprints;
+    $returnData['resultKeys'] = $this->model->resultKeys;
 
     //log
     $log = new Logging();
@@ -446,7 +450,7 @@ class UpcqueryController {
   //set target variables for display
   function setTarget($newTarget) {
 
-    require_once(dirname(__FILE__) . '/model/targets_metaHelper.php' );
+    //require_once(dirname(__FILE__) . '/model/targets_metaHelper.php' );
     $this->target = $newTarget;
     $this->model->viewParams['target'] = $newTarget;
     $this->model->target = $newTarget;

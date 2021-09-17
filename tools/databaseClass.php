@@ -24,9 +24,9 @@ class DatabasePG {
   var $password;
   var $multiDBResult;
 
-  function DatabasePG($target="") {
+  function DatabasePG($target="",$new=false) {
 
-    $this->target = strtolower($target);
+    $this->target = ($new) ? 'new' : strtolower($target);
     $this->targetDBs = array('mars','moon','other');
     $this->multiDBResult = false;
   }
@@ -55,6 +55,13 @@ class DatabasePG {
       $this->dbname=$config->dbname_moon;
       $this->user=$config->user_moon;
       $this->password=$config->password_moon;
+      break;
+    case 'new':
+      $this->host=$config->host_new;
+      $this->port=$config->port_new;
+      $this->dbname=$config->dbname_new;
+      $this->user=$config->user_new;
+      $this->password=$config->password_new;
       break;
     default:
       //db for rest of solar system
