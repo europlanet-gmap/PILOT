@@ -14,8 +14,8 @@ require_once(dirname(__FILE__) . '/model/bands_helper.php');
 require_once(dirname(__FILE__) . '/model/stats_helper.php');
 require_once(dirname(__FILE__) . '/model/histogram_helper.php');
 require_once(dirname(__FILE__) . '/model/stereo_helper.php');
-require_once(dirname(__FILE__) . '/model/datafiles_helper2.php');
-require_once(dirname(__FILE__) . '/model/keywords_metaHelper.php');
+require_once(dirname(__FILE__) . '/model/datafiles_helper.php');
+//require_once(dirname(__FILE__) . '/model/keywords_metaHelper.php');
 require_once(dirname(__FILE__) . '/tools/loggingClass.php');
 require_once(dirname(__FILE__) . '/tools/nomenclatureClass.php');
 require_once(dirname(__FILE__) . '/tools/json.php');
@@ -131,11 +131,14 @@ class UpcqueryController {
       foreach ($powArray as $pVal) {
 	if (!isset($powJobs[$pVal['instrument']])) {
 	  $powJobs[$pVal['instrument']]['count'] = 1;
-	  $powJobs[$pVal['instrument']]['displayname'] = $pVal['displayname'];
+	  //$powJobs[$pVal['instrument']]['displayname'] = $pVal['displayname'];
 	  $powJobs[$pVal['instrument']]['upcids'] = $pVal['upcid'];
+	  $powJobs[$pVal['instrument']]['displayname'] = $instrumentTable[$pVal['instrumentid']]['displayname'];
 	  $powJobs[$pVal['instrument']]['mission'] = $instrumentTable[$pVal['instrumentid']]['mission'];
-	  $powJobs[$pVal['instrument']]['comments'] = $instrumentTable[$pVal['instrumentid']]['comments'];
-	  $powJobs[$pVal['instrument']]['pow'] = $instrumentTable[$pVal['instrumentid']]['processtype'];
+	  //$powJobs[$pVal['instrument']]['comments'] = $instrumentTable[$pVal['instrumentid']]['comments'];
+	  //$powJobs[$pVal['instrument']]['pow'] = $instrumentTable[$pVal['instrumentid']]['processtype'];
+	  $powJobs[$pVal['instrument']]['comments'] = '';
+	  $powJobs[$pVal['instrument']]['pow'] = 'POW';
 	  $powJobs[$pVal['instrument']]['user'] = (isset($_SERVER['REMOTE_USER'])) ? $_SERVER['REMOTE_USER'] : '';
 	} else {
 	  $powJobs[$pVal['instrument']]['count']++;
@@ -187,7 +190,7 @@ class UpcqueryController {
     $hash = new hashResults($this->model);
     $returnData['images'] = $hash->get();    
     $returnData['footprints'] = $hash->footprints;
-    $returnData['resultKeys'] = $this->model->resultKeys;
+    //$returnData['resultKeys'] = $this->model->resultKeys;
 
     //log
     $log = new Logging();

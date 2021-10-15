@@ -6,7 +6,7 @@
    */
 
 require_once(dirname(__FILE__) . '/../tools/databaseClass.php' );
-require_once(dirname(__FILE__) . '/keywords_metaHelper.php' );
+//require_once(dirname(__FILE__) . '/keywords_metaHelper.php' );
 
 class BandsHelper {
 

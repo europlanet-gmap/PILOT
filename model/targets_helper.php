@@ -6,7 +6,7 @@
    */
 
 require_once(dirname(__FILE__) . '/../tools/databaseClass.php' );
-require_once(dirname(__FILE__) . '/instruments_metaHelper.php' );
+require_once(dirname(__FILE__) . '/instruments_helper2.php' );
 
 
 class TargetsHelper {

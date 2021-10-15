@@ -10,8 +10,7 @@
 require_once(dirname(__FILE__) . '/../tools/databaseClass.php' );
 require_once(dirname(__FILE__) . '/targets_helper.php' );
 require_once(dirname(__FILE__) . '/json_keywords_helper.php' );
-//require_once(dirname(__FILE__) . '/targets_metaHelper.php' );
-//require_once(dirname(__FILE__) . '/keywords_metaHelper.php' );
+require_once(dirname(__FILE__) . '/datafiles_helper.php' );
 
 
 class upcQuery {
@@ -51,7 +50,7 @@ class upcQuery {
   var $explain;
   var $total = null;
   var $footprints;
-  var $resultKeys;
+  //var $resultKeys;
   var $hashArray;
   var $hashItem;
   var $viewParams;
@@ -105,18 +104,11 @@ class upcQuery {
     if ($this->limitNumber) {
       $limitClause = 'LIMIT ' . $this->limitNumber;
       if (isset($this->step) && is_numeric($this->step) && ($this->step > 0)) {
-	//$limitClause .= ' OFFSET ' . (($this->step -1) * $this->limitNumber) . ' ';  
 	$limitClause .= ' OFFSET ' . ($this->step -1) . ' ';
       }
     }
 
-
-    //INITIAL RESULT KEYS - used to determine columns displayed after pull
-    $this->resultKeys = array('productid', 'source', 'detached_label', 'footprint', 'isisid', 'instrument', 'displayname', 'thumbnailurl');
-
-
     //TARGET AND DATEFILES SETTINGS
-    //$fromClause =  "FROM datafiles_w_footprints as d ";
     $fromClause =  "FROM datafiles as d JOIN search_terms AS s ON (d.upcid = s.upcid) ";
     $targetSelect = '';
     $targetJoin = '';
@@ -135,11 +127,7 @@ class upcQuery {
 
 
     //GEO CLAUSE
-    //$keywordsHelper = new KeywordsHelper($this->target);
-    //$geoTypeId = $keywordsHelper->getTypeIdFromKeyword('isisfootprint');
-    //$geoSelect = ", ST_AsText(geoTable.value) AS footprint ";
     $geoSelect = ", ST_AsText(s.isisfootprint) AS footprint ";    
-    //$geoJoin = 'LEFT JOIN meta_geometry AS geoTable ON (d.upcid = geoTable.upcid) AND geoTable.typeid=' . $geoTypeId . ' '; 
     $geoJoin = '';
     if ($this->wkt == $this->fullMapWKT || $this->wkt == '') {
       //no bounding box, js returned max box
@@ -157,7 +145,6 @@ class upcQuery {
       }
       //bb check
       $matchWKT = (!isset($this->astroBBDatelineWKT) || ($this->astroBBDatelineWKT == '')) ? $this->wkt :  $this->astroBBDatelineWKT;
-      //$geoWhereClause = 'AND ' . $geoFunction . "(footprint, ST_GeomFromText('" . $matchWKT . "')) ";
       $geoWhereClause = 'AND ' . $geoFunction . "(s.isisfootprint, ST_GeomFromText('" . $matchWKT . "')) ";
     } 
 
@@ -165,17 +152,11 @@ class upcQuery {
     //INSTRUMENT CLAUSE
     $instrumentWhereClause ='';
     $instrumentSelect = ',i.instrument, i.displayname ';
-    //$instrumentJoin = 'JOIN instruments ON (d.instrumentid = instruments.instrumentid) ';
     $instrumentJoin = 'JOIN instruments i ON (d.instrumentid = i.instrumentid) ';
-    //$this->mappedArray = array(3);
     if (!empty($this->mappedArray) || !empty($this->unmappedArray)) {
-      //$keywordsHelper = new KeywordsHelper($this->target);
-      //$mappedTypeId = $keywordsHelper->getTypeIdFromKeyword('error');
-      //$mappedTypeTable = 'meta_boolean';
       $instrumentWhereClause = 'AND (';
       $instrumentsHelper = new InstrumentsHelper($this->target);
       $iArray = array_unique(array_merge($this->mappedArray, $this->unmappedArray));
-      //$instrumentJoin .= 'JOIN ' . $mappedTypeTable . ' AS mappedGeometryTable ON (d.upcid = mappedGeometryTable.upcid) '; 
       foreach ($iArray as $iKey => $iVal) {
 	$currentInstrumentId = is_numeric($iVal) ? $iVal : $instrumentsHelper->getIdFromDisplayName($iVal);
 	$cleanInstrumentName = str_replace(' ','',$iVal);
@@ -190,7 +171,6 @@ class upcQuery {
 	  //$instrumentWhereClause .= ') ';
 	}
       }
-      //$instrumentWhereClause .= ($instrumentWhereClause != '') ? ') ' : '';
       $instrumentWhereClause .=  ') ';
     }
 
@@ -220,22 +200,11 @@ class upcQuery {
     default:
       //keyword-based order
       $groupByKeyword = $this->groupBy;
-      //$groupByMetaTable = KeywordsHelper::getMetaTableFromKeyword($groupByKeyword);
-      //$groupByTypeId = KeywordsHelper::getTypeIdFromKeyword($groupByKeyword);
-      //$orderByJoin = 'LEFT JOIN ' . $groupByMetaTable . ' AS orderby_' . $groupByKeyword . ' ON (d.upcid = orderby_' . $groupByKeyword . '.upcid) '; 
-      //$orderByWhereClause = 'AND orderby_' . $groupByKeyword . '.typeid=' . $groupByTypeId . ' ';
-      //$orderByJoin .= 'AND orderby_' . $groupByKeyword . '.typeid=' . $groupByTypeId . ' ';
-      //$orderBySelect = ', orderby_' . $groupByKeyword . '.value AS ' . $groupByKeyword . ' ';
-      //$orderByClause = 'ORDER BY orderby_' . $groupByKeyword . '.value ' . $this->groupDir . ' ';
-
       $orderByJoin = '';
       $orderByWhereClause = '';
       $orderBySelect = ', s.' . $groupByKeyword . ' ';
       $orderByClause = 'ORDER BY s.' . $groupByKeyword . ' ' . $this->groupDir . ' ';
 
-      if (!array_search($groupByKeyword, $this->resultKeys)) {
-	$this->resultKeys[] = $groupByKeyword;
-      }
       break;
     }
 
@@ -370,15 +339,9 @@ class upcQuery {
 	$cKeywordOnly = $cKeywordCurrent[0]; 
 	$instrumentId = isset($cKeywordCurrent[1]) ? $cKeywordCurrent[1] : NULL;
 
-	//get table
-	//$constraintRecord = KeywordsHelper::getRecordFromKeyword($cKeywordOnly, $instrumentId);
-	//if ($constraintRecord['datatype'] == 'double') {$constraintRecord['datatype'] = 'precision';} //hack to deal with naming inconsistancy
-
 	//select
 	$constraintSelect .= ', st_' . $cKey . '.' . $cKey . ' ';
-	if (!in_array($cKey,$this->resultKeys)) {
-	  $this->resultKeys[] = $cKey;
-	}
+
 	//joins/wheres
 	//if (is_numeric($instrumentId) && ($instrumentId > 0)) {
 	  //$constraintJoin .= 'LEFT JOIN (SELECT * FROM search_terms WHERE typeid=' . $constraintRecord['typeid'] . ') AS meta_' . $cKey . ' ON (d.upcid = meta_' . $cKey . '.upcid) ';
@@ -435,7 +398,7 @@ class upcQuery {
 
     //QUERY
     $this->queryText =  $hashSelect . 
-      "SELECT d.upcid, d.productid, d.source, d.detached_label, d.isisid, d.instrumentid " . $instrumentSelect . $targetSelect . $constraintSelect . $orderBySelect . $thumbnailSelect . $geoSelect .
+      "SELECT d.upcid, d.productid, d.source, d.detached_label, d.isisid, d.instrumentid, s.* " . $instrumentSelect . $targetSelect . $constraintSelect . $orderBySelect . $thumbnailSelect . $geoSelect .
       $fromClause .
       $instrumentJoin .
       $targetJoin . 
@@ -496,7 +459,6 @@ class upcQuery {
       $this->_buildQuery();
     }
 
-
     if ($this->queryText == '') return(0);
 
     //run query
@@ -517,7 +479,7 @@ class upcQuery {
       $results[] = $datafilesHelper->record;
     }
     $this->time = -1; //not normal query
-    $this->resultKeys = $datafilesHelper->csvKeys;
+    //$this->resultKeys = $datafilesHelper->csvKeys;
     $this->result = $results;
   }
 
@@ -632,6 +594,9 @@ class upcQuery {
 
   function selectResultToCSVFile() {
 
+    //RESULT KEYS - used to determine columns displayed after pull
+    $resultKeys = array('productid','source','detached_label','instrument','starttime','minimumemission','minimumincidence','minimumphase','maximumemission','maximumincidence','maximumphase','meangroundresolution','solarlongitude');
+
     //get results
     if (empty($this->result)) {
       $this->getResult();
@@ -642,7 +607,6 @@ class upcQuery {
     $tail = 'csv';
     $TMPDIR = dirname(__FILE__) . '/../tmp/';
     $filename = $TMPDIR . $title . '-' . date("Ymd") . '.' . $tail;
-    $omitPattern = '/footprint|instrumentid|displayname/';
     //print('filename:' . $filename . '<br/>');
 
     //need db class
@@ -650,8 +614,7 @@ class upcQuery {
 
     //write column headers
     $output = '';
-    foreach($this->resultKeys as $rVal) {
-      if (preg_match($omitPattern, $rVal)) {continue;}
+    foreach($resultKeys as $rVal) {
       $output .= ($output == '') ? '' : ', ';
       $output .= $rVal;
     }
@@ -661,7 +624,7 @@ class upcQuery {
     foreach($this->result as $row) {
       $output = '';
   
-      foreach($this->resultKeys as $rVal) {
+      foreach($resultKeys as $rVal) {
       if (preg_match($omitPattern, $rVal)) {continue;}
 	$output .= ($output == '') ? '' : ', ';
 	//$output .= str_replace(',','\\,', $row[$rVal]);

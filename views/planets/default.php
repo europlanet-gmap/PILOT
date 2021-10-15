@@ -8,7 +8,8 @@ $cssPath = $componentPath . "css/";
 $imagePath = "images/";
 $mapLinkPath = "http://" . $_SERVER['SERVER_NAME'] . str_replace('//','/', dirname($_SERVER['PHP_SELF']));
 $linkPath = "http://" . $_SERVER['SERVER_NAME'] . str_replace('//','/',dirname($_SERVER['PHP_SELF']));
-$formAction = htmlentities("http://" . $_SERVER['SERVER_NAME'] . $_SERVER['PHP_SELF']);
+//$formAction = htmlentities("http://" . $_SERVER['SERVER_NAME'] . $_SERVER['PHP_SELF']);
+$formAction = htmlentities("http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]");
 $planetArray = array('MERCURY','VENUS','EARTH','MARS','JUPITER','SATURN','SMALL BODIES','URANUS','NEPTUNE');
 
 ?>

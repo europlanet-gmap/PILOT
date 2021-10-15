@@ -659,9 +659,9 @@ PilotSearch.prototype.show = function(footprints)  {
       rightDiv.className ='upcCarouselInfo';
       ImageInfoHTML += '<div class="upcCarouselLinks">';
       ImageInfoHTML += '<img src="images/infoIcon.gif" title="info" class="upcTreeIcon" onclick="pilotSearch.info(\'' + upcid + '\');" />';
-      ImageInfoHTML += '<a href="' + footprints[fKey]['edr_source'] + '" download ><img src="images/download.gif" title="download image" class="upcTreeIcon" /></a>';
-      if (footprints[fKey]['edr_detached_label'] != '') {
-	ImageInfoHTML += '<a href="' + footprints[fKey]['edr_detached_label'] + '" download ><img src="images/labelDownload.png" title="download label" class="upcTreeIcon" /></a>';
+      ImageInfoHTML += '<a href="' + footprints[fKey]['source'] + '" download ><img src="images/download.gif" title="download image" class="upcTreeIcon" /></a>';
+      if (footprints[fKey]['detached_label'] && (footprints[fKey]['detached_label'] != '')) {
+	ImageInfoHTML += '<a href="' + footprints[fKey]['detached_label'] + '" target="_blank" download ><img src="images/labelDownload.png" title="download label" class="upcTreeIcon" /></a>';
       }
       if (footprints[fKey]['footprint'] != this.badGeometry) {
 	ImageInfoHTML += '<img id="upcCarouselMapButton' + upcid + '" src="images/globe.gif" title="map" class="upcTreeIcon" onclick="pilotSearch.map(\'' + upcid + '\',\'' + thumb + '\');" />';

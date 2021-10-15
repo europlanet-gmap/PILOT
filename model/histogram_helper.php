@@ -2,7 +2,7 @@
 
 require_once(dirname(__FILE__) . '/../tools/databaseClass.php' );
 //require_once(dirname(__FILE__) . '/targets_metaHelper.php' );
-require_once(dirname(__FILE__) . '/keywords_metaHelper.php' );
+//require_once(dirname(__FILE__) . '/keywords_metaHelper.php' );
 
 
 class HistogramHelper {
@@ -36,12 +36,13 @@ class HistogramHelper {
     $this->instrument = $instrumentid;
 
     $this->histogramArray = array();
-    $keywordsHelper = new KeywordsHelper($this->target);
+    
+    //$keywordsHelper = new KeywordsHelper($this->target);
     //$keywordid = $keywordsHelper->getTypeIdFromKeyword($keyword);
-    $keywordRecord = $keywordsHelper->getRecordFromKeyword($keyword);
-    $keywordid = $keywordRecord['typeid'];
-    $this->keywordDisplayname = $keywordRecord['displayname'];
-
+    //$keywordRecord = $keywordsHelper->getRecordFromKeyword($keyword);
+    //$keywordid = $keywordRecord['typeid'];
+    //$this->keywordDisplayname = $keywordRecord['displayname'];
+    /*
     switch($keyword) {
     case 'starttime':
     case 'processdate':
@@ -59,7 +60,8 @@ class HistogramHelper {
       $this->getDegrees($instrumentid, $keywordid);
       return($this->getJSONRecord());
     }
-
+    */
+    return(null);
   }
 
   //
