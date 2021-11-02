@@ -151,8 +151,13 @@ PilotConstrain.prototype.show = function(id)  {
   var sliderE = '';
   var amountE = '';
   var minVal, maxVal = 0;
-  //$('<span/>', {html: 'Id Search: '}).appendTo(eR);
-  //$('<input/>', {type: 'text', size: '20', name: id + '__searchId', id: id + '__searchId'}).appendTo(eR);
+  $('<span/>', {html: 'Product Id match: '}).appendTo(eR);
+  var ePID = $('<div/>', {id: iDiv + 'PID'}).appendTo(eR);
+  $('<input/>', {type: 'text', size: '20', name: id + '__searchId', id: id + '__searchId'}).appendTo(ePID);
+  $('<input/>', {type: 'button', value: 'Go!', id: 'advPIDButton' + id, "class": 'advPIDButton'}).appendTo(ePID);
+  $('#advPIDButton' + id).click(function() {pilotConstrain.searchAlertOn();});
+
+
   //$('#' + id + '__searchId').change(function() {pilotConstrain.searchAlertOn();});
   //for (var main in this.mappedSliders) {
    for (var item in limits) {
@@ -165,7 +170,7 @@ PilotConstrain.prototype.show = function(id)  {
     //}
    }
   //}
-  /*
+/*
   var sLength = strings.length;
   if (sLength > 1) {
     $('<span/>', {'class': 'advText', id: "advText1", value: '', html: 'Identifier Text Match: '}).appendTo(eR);
@@ -221,6 +226,7 @@ PilotConstrain.prototype.show = function(id)  {
 
   $('<input/>', {type: 'button', value: 'Clear Settings', id: 'advClearButton' + id, "class": 'advClearButton'}).appendTo(eR);
   $('#advClearButton' + id).click(function() {pilotConstrain.clear(id);});
+
 };
 
 // element - div

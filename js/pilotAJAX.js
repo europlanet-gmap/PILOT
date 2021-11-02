@@ -172,7 +172,7 @@ pilotAJAX.prototype.info = function(id) {
 	       var tipText='';
 	       var productName='', productText='';
 	       var header = [];
-               skipKeys = ['emissionangle','err_flag','isisfootprint','incidenceangle','instrumentid','jsonkeywords','pdsproductid','phaseangle','targetid','upcid'];
+               skipKeys = ['emissionangle','err_flag','isisfootprint','incidenceangle','instrumentid','Xjsonkeywords','pdsproductid','phaseangle','targetid','upcid'];
                titleSwaps = [{name: 'instrument_name', title: 'Instrument Name'},
                              {name: 'instrument' ,title: 'Instrument'},
                              {name: 'isisid', title: 'ISIS ID'},
@@ -190,6 +190,12 @@ pilotAJAX.prototype.info = function(id) {
                              {name: 'starttime', title: 'Start Time'},
                              {name: 'system', title: 'System'},
                              {name: 'target_name', title: 'Target'}]
+               if (json['jsonkeywords']) {
+                 //console.log(JSON.stringify(JSON.parse(json['jsonkeywords']), null, 2));
+                 //json = {...JSON.parse(json['jsonkeywords'])['caminfo']['polygon'], ...json};
+                 var jsonLabel = JSON.stringify(JSON.parse(json['jsonkeywords']), null, 2);
+                 delete json['jsonkeywords'];
+               }
                for (var item in json) {
                  if (skipKeys.includes(item)) {
                    continue;
@@ -225,7 +231,9 @@ pilotAJAX.prototype.info = function(id) {
 		 head = head + "<b>" + key + ':</b> ' + header[key] + '<br/>';
 	       };
 	       var close = '<span class="closeInfo" onclick="pilotSearch.closeInfo();" >x</span>';
-	       $('#pilotInfoContainer').html(close + '<div style="padding:5px;">' + productText + '<br/>' + head + tipText + '</div>');
+               downloadText = jsonLabel;
+               var jsonButton = '<br/><input type="button" name="jsonButton" value="Show JSON Label" onclick="$(\'#jsonLabel\').toggle();">&nbsp;&nbsp;<input type="button" name="jsonButtonDown" value="Download JSON Label" onclick="pilotDownloadString(\'label.json\');"><br/><div id="jsonLabel" style="display:none;"><pre>' + jsonLabel + '</pre></div>';
+	       $('#pilotInfoContainer').html(close + '<div style="padding:5px;">' + productText + '<br/>' + head + tipText + jsonButton + '</div>');
 	     }
 	     pilotLockout.off('info');
 	   }
