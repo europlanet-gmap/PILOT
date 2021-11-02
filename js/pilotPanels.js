@@ -55,6 +55,9 @@ console.log('showing solar system . . . ' + target);
     //newsCall=new pilotAJAX();
     //newsCall.loadNews();
     var homeHTML = '<div id="pilotNews">';
+    if (pilotAlert) {
+      homeHTML += '<br/><h3>Alerts</h3><div class="pilotNewsItem">'+pilotAlert +'</div><br/>';
+    }
     homeHTML += '<br/><h3>Resources</h3><div class="pilotNewsItem"><ul><li><a target="_blank" href="doc/PILOT_Tutorial_lg_12.16.19.pdf" class="purpleText">Tutorial for New Users</a></li><li><a target="_blank" href="https://astrogeology.usgs.gov/maps/contact" class="purpleText">Contact</a></li><li><a target="_blank" href="index.php?view=faq" class="purpleText">FAQ</a></li><li><a target="_blank" href="https://github.com/USGS-Astrogeology/PILOT" class="purpleText">Source Code on GitHub</a></li></ul></div>';
     homeHTML += '<br/><br/><h3>News</h3><div class="pilotNewsItem">  The UPC database on which PILOT is based is currently being updated. During this time, product searches using PILOT may produce different results from other PDS search tools. Please refer back to this page for updates. In the meantime, consider searching for PDS products on the <a href="https://pds-imaging.jpl.nasa.gov/search/"><u>Image Atlas</u></a> or the <a href="http://ode.rsl.wustl.edu/"><u>Orbital Data Explorers</u></a>.</div>';
     homeHTML += '</div>';
