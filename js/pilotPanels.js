@@ -341,7 +341,7 @@ function toggleConstrain(i) {
 
   //stereo tab activation
   if (stereoHot) {
-    //$('#stereoNav').css('display', 'block');
+    $('#stereoNav').css('display', 'block');
   } else {
     $("#tabs").tabs('disable',4);
     $('#stereoNav').css('display', 'none');
