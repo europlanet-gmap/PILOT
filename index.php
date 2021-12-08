@@ -45,13 +45,12 @@ foreach($controller->scriptArray as $sVal) {
             </a>
             <div id="bannerLogo"><a href="<?php echo $baseURL; ?>"><img alt="Pilot" src="images/pilot-logo.png" /></a></div>
 
-<!--
             <div id="upcSearchIdDiv" >
                <input type="hidden" id="upcSearchId" name="upcSearchId" value="Id Search" size="20" />
                <input type="hidden" id="upcSearchType" name="upcSearchType" value="Id Search Type" size="20" />
                <img id="upcSearchIdButton" src="<?php echo $baseURL; ?>images/search.png" />
             </div>
--->
+
             <div id="nasaLogo" >
             <a href="https://www.usgs.gov/centers/astrogeology-science-center/science/cartography-and-imaging-sciences-node-nasa-planetary">
                 <img style="float:left;height:75px;" alt="PDS" src="images/pds_logo-inviso.png" />
