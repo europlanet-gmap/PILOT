@@ -16,6 +16,6 @@ COPY . /var/www/pilot
 WORKDIR /var/www/pilot
 
 RUN git clone https://github.com/USGS-Astrogeology/AstroWebMaps.git
-RUN cd AstroWebMaps && make
+#RUN cd AstroWebMaps && make
 
 RUN mkdir log tmp && chown www-data:www-data log tmp

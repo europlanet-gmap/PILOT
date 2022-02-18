@@ -162,18 +162,135 @@ class UpcqueryController {
   }
 
 
-  //totalAjaxGet - pull totals for Ajax queries - no display
-  function totalAjaxGet() {
+  //proxy call to grab band stats
+  function bandStatsAjaxGet() {
+    if (isset($_REQUEST['path'])) {
+      $bPath = 'band_summary_' . $_REQUEST['path'] . '.json';
+      $statsPath = "https://upcimages.wr.usgs.gov/summaries/" .  $bPath;
+      $handle = @fopen($statsPath, "rb");
+      if (!$handle) {return (null);}
+      $json = stream_get_contents($handle);
+      fclose($handle);
+      echo $json;  
+    }
+    die();
+  }
+
+
+  //bigImageAjaxGet - pull big image - no display
+  function bigImageAjaxGet() {
+    $datafilesHelper = new datafilesHelper($this->target);
+    $datafilesHelper->getImageFromUpcId($this->model->upcid, true);
+    $output = $datafilesHelper->getJSONRecord();
+    echo $output;  
+    die();
+  }
+
+
+  //proxy call to nomenclature to get types
+  function featureTypesAjaxGet() {
+    $nomenHelper = new NomenclatureHelper();
+    $json = json_encode($nomenHelper->getFeatureTypes($this->target));
+    echo $json;  
+    die();
+  }
+
+
+  //proxy call to nomenclature to fill form
+  function featureAjaxGet() {
+    $nomenHelper = new NomenclatureHelper();
+    $json = $nomenHelper->getFeatureNames($this->target, $_REQUEST['featureType']);
+    echo $json;  
+    die();
+  }
+
+
+  //proxy call to nomenclature to get feature lat lon
+  function featureLatLonAjaxGet() {
+    $nomenHelper = new NomenclatureHelper();
+    $json = $nomenHelper->getFeatureLatLon($_REQUEST['featureId']);
+    echo $json;  
+    die();
+  }
+
+
+  //hashAjaxGet - pull data for restricted (Ajax) queries - no display
+  function hashAjaxGet() {
     //grab hashed segment of results
-    $total = $this->model->getTotal();
-    echo $total;
+    $this->model->hashAjaxGet();
+    $output = $this->model->getRestrictedResultsHTML();
+    echo $output;  //sends JSON-formatted data
+    die();
+  }
+
+
+  //
+  function histogramAjaxGet() {
+    //grab histogram for instrument/keyword
+    $histoHelper = new HistogramHelper($this->target);
+    $output = $histoHelper->get($this->model->histogram, $this->model->keyword);
+    echo $output;
+    die();
+  }
+
+
+  //imageAjaxGet - pull image link for footprint - no display
+  function imageAjaxGet() {
+    $datafilesHelper = new datafilesHelper($this->target);
+    $datafilesHelper->getImageFromUpcId($this->model->upcid);
+    $output = $datafilesHelper->getJSONRecord();
+    echo $output;  
+    die();
+  }
+
+
+  //footprintAjaxGet - pull indepth data for footprint - no display
+  function infoAjaxGet() {
+    //grab footprint details ... not a UPC query ... need different model
+    $datafilesHelper = new datafilesHelper($this->target);
+    $datafilesHelper->getCompleteRecord($this->model->upcid, 'upcId');
+    $output = $datafilesHelper->getJSONRecord();
+    echo $output;  //sends JSON-formatted data
+    die();
+  }
+
+  /*
+  //
+  function limitsAjaxGet() {
+    //grab limits/bands for instrument
+    $limitsHelper = new LimitsHelper($this->target);
+    $limitsHelper->getLimits($this->model->limits);
+    $output = $limitsHelper->getJSONRecord();
+    //$bandsHelper = new BandsHelper($this->target);
+    //$bandsHelper->getBandSummary($this->model->limits);
+    //$output2 = $bandsHelper->getJSONRecord();
+    //$keywordsHelper = new KeywordsHelper($this->target);
+    //$output3 = json_encode($keywordsHelper->getKeywordsFromInstrumentId($this->model->limits, 'string'));
+    echo '[' . $output . ',' . $output2 . ',' . $output3 . ']';
+    die();
+  }
+  */
+
+  //
+  function missionStatsAjaxGet() {
+    //grab stats on instrument
+    $keywords = array('starttime','processdate','meangroundresolution');
+    $histoHelper = new HistogramHelper($this->target);
+    $output = '';
+    foreach ($keywords as $key) {
+      $histogram = $histoHelper->get($this->model->histogram, $key);
+      if ($histogram != '') {
+	$output .= ($output == '') ? '' : ',';
+	$output .= $histogram;
+      }
+    }
+    echo '[' . $output . ']';
     die();
   }
 
 
   //
   function results() {
-
     $returnData['step'] = (isset($this->model->step)) ? $this->model->step : 1; 
     $returnData['groupBy'] = $this->model->groupBy;
     $totalTime = 0;
@@ -202,146 +319,12 @@ class UpcqueryController {
 
   //
   function resultsAjaxGet() {
-    
     //json format the results, send back to browser
     require_once(dirname(__FILE__) . '/tools/json.php' );
     echo json_encode($this->results());
     die();
   }
 
-
-  //hashAjaxGet - pull data for restricted (Ajax) queries - no display
-  function hashAjaxGet() {
-    //grab hashed segment of results
-    $this->model->hashAjaxGet();
-    $output = $this->model->getRestrictedResultsHTML();
-    echo $output;  //sends JSON-formatted data
-    die();
-  }
-
-
-
-  //footprintAjaxGet - pull indepth data for footprint - no display
-  function infoAjaxGet() {
-    //grab footprint details ... not a UPC query ... need different model
-    $datafilesHelper = new datafilesHelper($this->target);
-    $datafilesHelper->getCompleteRecord($this->model->upcid, 'upcId');
-    $output = $datafilesHelper->getJSONRecord();
-    echo $output;  //sends JSON-formatted data
-    die();
-  }
-
-
-  //
-  function unknownStatsAjaxGet() {
-    //grab stats on images with unknown targets
-    $statsHelper = new StatsHelper();
-    $output = $statsHelper->getJSONUnknownStats();
-    echo $output;
-    die();
-  }
-
-
-  //
-  function limitsAjaxGet() {
-    //grab limits/bands for instrument
-    $limitsHelper = new LimitsHelper($this->target);
-    $limitsHelper->getLimits($this->model->limits);
-    $output = $limitsHelper->getJSONRecord();
-    $bandsHelper = new BandsHelper($this->target);
-    $bandsHelper->getBandSummary($this->model->limits);
-    $output2 = $bandsHelper->getJSONRecord();
-    $keywordsHelper = new KeywordsHelper($this->target);
-    $output3 = json_encode($keywordsHelper->getKeywordsFromInstrumentId($this->model->limits, 'string'));
-    echo '[' . $output . ',' . $output2 . ',' . $output3 . ']';
-    die();
-  }
-
-
-  //
-  function histogramAjaxGet() {
-    //grab histogram for instrument/keyword
-    $histoHelper = new HistogramHelper($this->target);
-    $output = $histoHelper->get($this->model->histogram, $this->model->keyword);
-    echo $output;
-    die();
-  }
-
-  //
-  function missionStatsAjaxGet() {
-    //grab stats on instrument
-    $keywords = array('starttime','processdate','meangroundresolution');
-    $histoHelper = new HistogramHelper($this->target);
-    $output = '';
-    foreach ($keywords as $key) {
-      $histogram = $histoHelper->get($this->model->histogram, $key);
-      if ($histogram != '') {
-	$output .= ($output == '') ? '' : ',';
-	$output .= $histogram;
-      }
-    }
-    echo '[' . $output . ']';
-    die();
-  }
-
-
-  //imageAjaxGet - pull image link for footprint - no display
-  function imageAjaxGet() {
-    $datafilesHelper = new datafilesHelper($this->target);
-    $datafilesHelper->getImageFromUpcId($this->model->upcid);
-    $output = $datafilesHelper->getJSONRecord();
-    echo $output;  
-    die();
-  }
-
-
-  //bigImageAjaxGet - pull big image - no display
-  function bigImageAjaxGet() {
-    $datafilesHelper = new datafilesHelper($this->target);
-    $datafilesHelper->getImageFromUpcId($this->model->upcid, true);
-    $output = $datafilesHelper->getJSONRecord();
-    echo $output;  
-    die();
-  }
-
-
-  //proxy call to nomenclature to get types
-  function featureTypesAjaxGet() {
-
-    $nomenHelper = new NomenclatureHelper();
-    $json = json_encode($nomenHelper->getFeatureTypes($this->target));
-    echo $json;  
-    die();
-  }
-
-
-  //proxy call to nomenclature to fill form
-  function featureAjaxGet() {
-
-    $nomenHelper = new NomenclatureHelper();
-    $json = $nomenHelper->getFeatureNames($this->target, $_REQUEST['featureType']);
-    echo $json;  
-    die();
-  }
-
-
-  //proxy call to nomenclature to get feature lat lon
-  function featureLatLonAjaxGet() {
-
-    $nomenHelper = new NomenclatureHelper();
-    $json = $nomenHelper->getFeatureLatLon($_REQUEST['featureId']);
-    echo $json;  
-    die();
-  }
-
-  //
-  function stereoProcessAjaxGet() {
-    //grab stereo matches
-    $stereoHelper = new StereoHelper($this->target);
-    $output = $stereoHelper->get($this->model->stereos, $this->model->stereoOrder);
-    echo $output;
-    die();
-  }
 
   //
   function searchId() {
@@ -376,24 +359,17 @@ class UpcqueryController {
     $this->searchIdData =  json_encode($searchResults);
  }
 
-  // calls from ODE
-  //
-  function singleFootprint() {
-    $this->searchIdPreload = $this->searchId;
-  }
-
 
   //
   function searchIdAjaxGet() {
-
     $this->searchId();
     echo $this->searchIdData;
     die();
   }
 
+
   //
   function searchIdPrep() {
-
     if (!isset($this->searchSelect) || !isset($this->searchId)) {return null;}
     $this->model->searchIdArray[$this->searchSelect] = $this->searchId;
     if (!isset($this->model->groupBy)) { 
@@ -403,9 +379,9 @@ class UpcqueryController {
     }
   }
 
+
   //
   function searchIdTotalAjaxGet() {
-
     $this->searchIdPrep();
     //don't allow 1-3 char searches
     if (strlen($this->searchId) < 4) {
@@ -429,9 +405,46 @@ class UpcqueryController {
 
   }
 
+
+  //set target variables for display
+  function setTarget($newTarget) {
+    //require_once(dirname(__FILE__) . '/model/targets_metaHelper.php' );
+    $this->target = $newTarget;
+    $this->model->viewParams['target'] = $newTarget;
+    $this->model->target = $newTarget;
+    $targetHelper = new TargetsHelper();
+    $this->model->viewParams['targetInfo'] = $targetHelper->getRowByName($newTarget);
+  }
+
+
+  // calls from ODE
+  //
+  function singleFootprint() {
+    $this->searchIdPreload = $this->searchId;
+  }
+
+
+  //
+  function stereoProcessAjaxGet() {
+    //grab stereo matches
+    $stereoHelper = new StereoHelper($this->target);
+    $output = $stereoHelper->get($this->model->stereos, $this->model->stereoOrder);
+    echo $output;
+    die();
+  }
+
+
+  //totalAjaxGet - pull totals for Ajax queries - no display
+  function totalAjaxGet() {
+    //grab hashed segment of results
+    $total = $this->model->getTotal();
+    echo $total;
+    die();
+  }
+
+
   //template post - pull in map coordinates and set the wkt
   function templatePost() {
-
     //process file
     require_once(dirname(__FILE__) . '/tools/upcFileClass.php' );
 
@@ -450,15 +463,13 @@ class UpcqueryController {
   }
 
 
-  //set target variables for display
-  function setTarget($newTarget) {
-
-    //require_once(dirname(__FILE__) . '/model/targets_metaHelper.php' );
-    $this->target = $newTarget;
-    $this->model->viewParams['target'] = $newTarget;
-    $this->model->target = $newTarget;
-    $targetHelper = new TargetsHelper();
-    $this->model->viewParams['targetInfo'] = $targetHelper->getRowByName($newTarget);
+  //
+  function unknownStatsAjaxGet() {
+    //grab stats on images with unknown targets
+    $statsHelper = new StatsHelper();
+    $output = $statsHelper->getJSONUnknownStats();
+    echo $output;
+    die();
   }
 
 

@@ -1,6 +1,7 @@
 <?php
 
-$baseURL = 'https://' . $_SERVER['SERVER_NAME'] . str_replace('//','/',dirname($_SERVER['PHP_SELF']) . '/');
+  //$baseURL = 'https://' . $_SERVER['SERVER_NAME'] . str_replace('//','/',dirname($_SERVER['PHP_SELF']) . '/');
+$baseURL = htmlentities("http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]");
 $act = isset($_REQUEST['act']) ? $_REQUEST['act'] : ''; 
 ini_set('max_execution_time', 60);
 

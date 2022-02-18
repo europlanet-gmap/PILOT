@@ -15,53 +15,65 @@ class StereoHelper {
 
   function __construct($target="") {
     $this->target = $target;
-    $this->db = new DatabasePG($target);
+    $this->db = new DatabasePG('new');
   }
 
 
   function get($stereos, $order) {
     
     //get keywords
-    $KEYSELECT='';$KEYJOIN='';$KEYWHERE='';
-    $keywordsHelper = new KeywordsHelper($this->target);
-    $keywords = array('centeremissionangle','centerincidenceangle','centerlatitude','centerlongitude','centerradius','minimumemissionangle','maximumemissionangle','minimumincidenceangle','maximumincidenceangle','meangroundresolution','subsolarlatitude','solarlongitude','subsolarlongitude','subsolargroundazimuth','subsolarazimuth','subspacecraftgroundazimuth','subspacecraftlongitude','subspacecraftlatitude','surfacearea','targetcenterdistance');
-    foreach ($keywords as $kVal) {
-      $typeid = $keywordsHelper->getTypeIdFromKeyword($kVal);
-      if ($typeid > 0) {
-	$KEYSELECT .= 'k' . $typeid . '.value AS ' . $kVal . ', ';
-	$KEYJOIN .= 'LEFT JOIN meta_precision AS k' . $typeid . ' ON (d.upcid = k' . $typeid . '.upcid) ';
-	$KEYJOIN .= 'AND k' . $typeid . '.typeid = '. $typeid . ' ';
-      }
-      //init limit arrays
+    //$KEYSELECT='';$KEYJOIN='';$KEYWHERE='';
+    //$keywordsHelper = new KeywordsHelper($this->target);
+
+    $KEYSELECT='';
+    $searchwords = array('emissionangle','incidenceangle','minimumemission','maximumemission','minimumincidence','maximumincidence','meangroundresolution','solarlongitude','surfacearea');
+    $keywords2 = array('centerlatitude','centerlongitude','centerradius','subsolarlatitude','subsolarlongitude','subsolargroundazimuth','subsolarazimuth','subspacecraftgroundazimuth','subspacecraftlongitude','subspacecraftlatitude','targetcenterdistance');
+    foreach ($keywords2 as $kVal) {
       $limits[$kVal] = array('min'=>100000, 'max'=>0);
     };
-    $geoTypeId = $keywordsHelper->getTypeIdFromKeyword('isisfootprint');
+    foreach ($searchwords as $sVal) {
+      $limits[$sVal] = array('min'=>100000, 'max'=>0);
+    }
 
     $upcids = explode(',',$stereos);
     //pull info
     $i=0;
     foreach ($upcids as $upcid) { 
 
-      $query = 'SELECT d.upcid, d.productid, d.edr_source, i.instrumentid, i.displayname, ' . $KEYSELECT .
-	'ST_AsText(g.value) As footprint FROM ' . $this->datafilesTable . ' d ' .
-	'LEFT JOIN meta_geometry AS g ON (d.upcid = g.upcid) AND g.typeid=' . $geoTypeId . ' ' . 
-	"JOIN instruments_meta i USING (instrumentid) " .
-	$KEYJOIN .
+      $query = 'SELECT d.upcid, d.productid, d.source, ' .
+	'i.instrument, i.displayname, ' . 
+	"j.jsonkeywords, " .
+	's.*, ST_AsText(s.isisfootprint) AS footprint  ' . 
+	'FROM datafiles as d ' .
+	"JOIN search_terms s ON (d.upcid = s.upcid) " . 
+	"JOIN instruments i ON (d.instrumentid = i.instrumentid) " .
+	"JOIN json_keywords j ON (d.upcid = j.upcid) " .
 	'WHERE d.upcid =  ' . $upcid . ' ORDER BY d.productid';
-      //$KEYWHERE;
       //echo $query;
       $this->db->query($query);
       $record = $this->db->getResultRow();
       $this->stereoArray[$i] = $record;
 
+      $jsonArray = json_decode($this->stereoArray[$i]['jsonkeywords'], true);
+      $geoArray = array_column($jsonArray, 'geometry');
+      foreach ($keywords2 as $kVal) {
+	$this->stereoArray[$i][$kVal] = $geoArray[0][$kVal];
+      }
+      $this->stereoArray[$i]['surfacearea'] = $jsonArray['caminfo']['polygon']['surfacearea'][0];;
+
       //set limits
-      foreach ($keywords as $key) {
+      $allkeywords = $searchwords + $keywords2;
+      foreach ($allkeywords as $key) {
 	$limits[$key]['min'] = (floor($this->stereoArray[$i][$key]) < $limits[$key]['min']) ? floor($this->stereoArray[$i][$key]) : $limits[$key]['min'];
 	$limits[$key]['max'] = (ceil($this->stereoArray[$i][$key]) > $limits[$key]['max']) ? ceil($this->stereoArray[$i][$key]) : $limits[$key]['max'];
       }
 
       $i++;
     }
+
+    //print_r($this->stereoArray);
+    //die();
+
 
     //compute intersects
     $sLength = count($this->stereoArray);
@@ -88,7 +100,8 @@ class StereoHelper {
 	if (strpos($row['intersect'], 'POLY') === false) {continue;} //only work when intersect is poly
 	if (strpos($row['intersect'], 'MULTI') !== false) {
 	  //dateline crosser's are multipolygon's. . . union them to find centroid
-	  $query = "SELECT ST_AsText(multi) AS intersect FROM ST_Union(ARRAY(SELECT (ST_DUMP(ST_MakeValid(ST_Shift_Longitude(ST_GeomFromEWKT('" . $row['intersect'] . "'))))).geom AS geom)) AS multi";
+	  //$query = "SELECT ST_AsText(multi) AS intersect FROM ST_Union(ARRAY(SELECT (ST_DUMP(ST_MakeValid(ST_Shift_Longitude(ST_GeomFromEWKT('" . $row['intersect'] . "'))))).geom AS geom)) AS multi";
+	  $query = "SELECT ST_AsText(multi) AS intersect FROM ST_Union(ARRAY(SELECT (ST_DUMP(ST_MakeValid(ST_ShiftLongitude(ST_GeomFromEWKT('" . $row['intersect'] . "'))))).geom AS geom)) AS multi";
 	  $this->db->query($query);
 	  $rowUnion = $this->db->getResultRow();
 	  $row['intersectUnion'] = $rowUnion['intersect'];
@@ -115,10 +128,10 @@ class StereoHelper {
 	$areaMax = ($areaMax > $row['area']) ? $areaMax : $row['area']; 
 
 	//shadow tip distance
-	$x1 = tan($this->stereoArray[$sKey]['minimumincidenceangle']) * cos($this->stereoArray[$sKey]['subsolargroundazimuth']);
-	$y1 = tan($this->stereoArray[$sKey]['minimumincidenceangle']) * sin($this->stereoArray[$sKey]['subsolargroundazimuth']);
-	$x2 = tan($this->stereoArray[$i]['minimumincidenceangle']) * cos($this->stereoArray[$i]['subsolargroundazimuth']);
-	$y2 = tan($this->stereoArray[$i]['minimumincidenceangle']) * sin($this->stereoArray[$i]['subsolargroundazimuth']);
+	$x1 = tan($this->stereoArray[$sKey]['minimumincidence']) * cos($this->stereoArray[$sKey]['subsolargroundazimuth']);
+	$y1 = tan($this->stereoArray[$sKey]['minimumincidence']) * sin($this->stereoArray[$sKey]['subsolargroundazimuth']);
+	$x2 = tan($this->stereoArray[$i]['minimumincidence']) * cos($this->stereoArray[$i]['subsolargroundazimuth']);
+	$y2 = tan($this->stereoArray[$i]['minimumincidence']) * sin($this->stereoArray[$i]['subsolargroundazimuth']);
 	$p1 = new Point($x1, $y1);
 	$p2 = new Point($x2, $y2);
 	$line = new LineString(array($p1, $p2));
@@ -126,6 +139,7 @@ class StereoHelper {
 	$row['shadowtipdistance'] = round($stdistance,2);
 
 	//convergence angle
+	/*
 	$instrumentidPushBrooms = array(2,3,4,13,32);
 	$useBodyFixedFormula = (in_array($this->stereoArray[$sKey]['instrumentid'], $instrumentidPushBrooms) && in_array($this->stereoArray[$i]['instrumentid'], $instrumentidPushBrooms)); 
 	if ($useBodyFixedFormula) {
@@ -162,6 +176,8 @@ class StereoHelper {
 	  $convDen = sqrt(pow($v1X,2) + pow($v1Y,2) + pow($v1Z,2)) * sqrt(pow($v2X,2) + pow($v2Y,2) + pow($v2Z,2));
 	  $row['convergenceangle'] = rad2deg(acos($convNum / $convDen));
 	} else {
+	*/
+
 	  //normal convergence angle formula
 	  $getConvergence = function($e1, $e2, $a1, $a2) {
 	    $e1 = deg2rad($e1);
@@ -171,10 +187,12 @@ class StereoHelper {
 	    $cAngle = rad2deg(acos((cos($e1) * cos($e2)) + (sin($e1) * sin($e2) * cos($a1-$a2))));
 	    return (round($cAngle,2));
 	  };
-	  $row['convergenceangle'] = $getConvergence($this->stereoArray[$sKey]['centeremissionangle'], $this->stereoArray[$i]['centeremissionangle'],$this->stereoArray[$sKey]['subspacecraftgroundazimuth'], $this->stereoArray[$i]['subspacecraftgroundazimuth']);
-	}
+	  $row['convergenceangle'] = $getConvergence($this->stereoArray[$sKey]['emissionangle'], $this->stereoArray[$i]['emissionangle'],$this->stereoArray[$sKey]['subspacecraftgroundazimuth'], $this->stereoArray[$i]['subspacecraftgroundazimuth']);
+
+	  //}
 
 	//solar separation
+	  /*
 	$computeSolarSeparation = ($useBodyFixedFormula && isset($planetSunDistance[ucfirst(strtolower($this->target))]));
 	if ($computeSolarSeparation) {
 	  $psd = $planetSunDistance[ucfirst(strtolower($this->target))];
@@ -207,18 +225,19 @@ class StereoHelper {
 	  $ssDen = sqrt(pow($ssv1X,2) + pow($ssv1Y,2) + pow($ssv1Z,2)) * sqrt(pow($ssv2X,2) + pow($ssv2Y,2) + pow($ssv2Z,2));
 	  $row['solarseparationangle'] = rad2deg(acos($ssNum / $ssDen));
 	}
+	*/
 
 	//parallax (from Bonnie's Perl script)
-	$parX1 = (-1)*tan(deg2rad($this->stereoArray[$sKey]['centeremissionangle']))*(cos(deg2rad($this->stereoArray[$sKey]['subspacecraftgroundazimuth'])));
-	$parX2 = (-1)*tan(deg2rad($this->stereoArray[$i]['centeremissionangle']))*(cos(deg2rad($this->stereoArray[$i]['subspacecraftgroundazimuth'])));
-	$parY1 = tan(deg2rad($this->stereoArray[$sKey]['centeremissionangle']))*sin(deg2rad($this->stereoArray[$sKey]['subspacecraftgroundazimuth']));
-	$parY2 = tan(deg2rad($this->stereoArray[$i]['centeremissionangle']))*sin(deg2rad($this->stereoArray[$i]['subspacecraftgroundazimuth']));
+	$parX1 = (-1)*tan(deg2rad($this->stereoArray[$sKey]['emissionangle']))*(cos(deg2rad($this->stereoArray[$sKey]['subspacecraftgroundazimuth'])));
+	$parX2 = (-1)*tan(deg2rad($this->stereoArray[$i]['emissionangle']))*(cos(deg2rad($this->stereoArray[$i]['subspacecraftgroundazimuth'])));
+	$parY1 = tan(deg2rad($this->stereoArray[$sKey]['emissionangle']))*sin(deg2rad($this->stereoArray[$sKey]['subspacecraftgroundazimuth']));
+	$parY2 = tan(deg2rad($this->stereoArray[$i]['emissionangle']))*sin(deg2rad($this->stereoArray[$i]['subspacecraftgroundazimuth']));
 
 	//shadow (from Bonnie's Perl script)
-	$shadX1 = (-1)*tan(deg2rad($this->stereoArray[$sKey]['centerincidenceangle']))*(cos(deg2rad($this->stereoArray[$sKey]['subsolargroundazimuth'])));
-	$shadX2 = (-1)*tan(deg2rad($this->stereoArray[$i]['centerincidenceangle']))*(cos(deg2rad($this->stereoArray[$i]['subsolargroundazimuth'])));
-	$shadY1 = tan(deg2rad($this->stereoArray[$sKey]['centerincidenceangle']))*sin(deg2rad($this->stereoArray[$sKey]['subsolargroundazimuth']));
-	$shadY2 = tan(deg2rad($this->stereoArray[$i]['centerincidenceangle']))*sin(deg2rad($this->stereoArray[$i]['subsolargroundazimuth']));
+	$shadX1 = (-1)*tan(deg2rad($this->stereoArray[$sKey]['incidenceangle']))*(cos(deg2rad($this->stereoArray[$sKey]['subsolargroundazimuth'])));
+	$shadX2 = (-1)*tan(deg2rad($this->stereoArray[$i]['incidenceangle']))*(cos(deg2rad($this->stereoArray[$i]['subsolargroundazimuth'])));
+	$shadY1 = tan(deg2rad($this->stereoArray[$sKey]['incidenceangle']))*sin(deg2rad($this->stereoArray[$sKey]['subsolargroundazimuth']));
+	$shadY2 = tan(deg2rad($this->stereoArray[$i]['incidenceangle']))*sin(deg2rad($this->stereoArray[$i]['subsolargroundazimuth']));
 
 	//ratios (from Bonnie's Perl script)
 	$row['baseheightratio'] = sqrt(pow($parX1-$parX2,2)+pow($parY1-$parY2,2));
@@ -227,7 +246,7 @@ class StereoHelper {
 	$row['expectedprecision'] = ($row['baseheightratio'] > 0) ? (.2*($gsd/$row['baseheightratio'])) : 0;
 
 	//differences
-	$row['incidenceangledifference'] = round(abs($this->stereoArray[$sKey]['minimumincidenceangle'] - $this->stereoArray[$i]['minimumincidenceangle']),2);
+	$row['incidenceangledifference'] = round(abs($this->stereoArray[$sKey]['minimumincidence'] - $this->stereoArray[$i]['minimumincidence']),2);
 	$row['solarazimuthdifference'] = round(abs($this->stereoArray[$sKey]['subsolargroundazimuth'] - $this->stereoArray[$i]['subsolargroundazimuth']),2);
 
 	$row['orgKey'] = $index; //store before sorting

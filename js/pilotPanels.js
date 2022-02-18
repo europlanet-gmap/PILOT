@@ -2,7 +2,7 @@ var colorArray = ["#006600", "#009900", "#6600ff", "#9966ff", "#996600", "#cc990
 var instruments = [];
 var astroMap =  null;
 var unknownStatsJSON = null;
-var stereoHot = false;
+var stereoHot = true;
 
 
 function titleCase(str) {
@@ -133,7 +133,7 @@ function showSolarSystem(target) {
     $('#total' + t).html('&nbsp;' + targetTotal[t].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' images');
   }
 
-  $('<span/>', {id: 'UnknownBar', 'class': 'barPlanet', html: '<span class="targetTitle" onclick="pilotSearch.enable(\'untargeted\');" >Untargeted Images</span>'}).appendTo($('#barChooserRight'));
+  //$('<span/>', {id: 'UnknownBar', 'class': 'barPlanet', html: '<span class="targetTitle" onclick="pilotSearch.enable(\'untargeted\');" >Untargeted Images</span>'}).appendTo($('#barChooserRight'));
 
 
 };
@@ -146,7 +146,7 @@ function showConstrain(instrument) {
   var mCheck = [];
   var navHTML = '';
   var textHTML = '';
-  var limitCall=new pilotAJAX();
+  //var limitCall=new pilotAJAX();
   $('#missionList input:checked').each(function() {
     if ( ($(this).attr('id').slice(0,6) == 'mapped') && ($.inArray($(this).val(), mCheck) == -1) ){
       missions.push({id: $(this).val(), name: instruments[$(this).attr('id').slice(7)]['name']});
@@ -166,10 +166,13 @@ function showConstrain(instrument) {
     navHTML += '</ul>';
     $('#constrainTabs').html(navHTML + textHTML);
     $('#constrainTabs').tabs();
+    console.log('pilotpanels show constrain. . ');
     for (i=0; i< missions.length; i++) {
+console.log('. .  calling pilotConstrain '+ missions[i]['id']);
       pilotConstrain.show(missions[i]['id']);
     }
   } else {
+    console.log('pilotpanels show constrain. . tabs exist');
     var cTabs = $('#constrainTabs').tabs();
     var cUl = cTabs.find("ul");
     //del old
@@ -185,9 +188,10 @@ function showConstrain(instrument) {
       if (!$('#iTab' + missions[i]['id']).length) {
 	cTabs.find(".ui-tabs-nav").append('<li id="constrain' + missions[i]['id'] + '"><a href="#iTab' + missions[i]['id'] + '" ><img title="' + instruments[missions[i]['id']]['missionTitle'] + '" src="images/' + instruments[missions[i]['id']]['mission'] + '-icon.png" class="missionIcon" />' + missions[i]['name'] + '</a></li>');
 	cTabs.append('<div class="iTab" id="iTab' + missions[i]['id'] + '"></div>');
-	limitCall.limits(missions[i]['id']);
+	//limitCall.limits(missions[i]['id']);
 	cTabs.tabs("refresh");
 	$('#constrainTabs').tabs("option", "active", 0);
+        pilotConstrain.show(missions[i]['id']);
       } else {
 	pilotConstrain.errorPanel(missions[i]['id']);
       }
@@ -272,8 +276,8 @@ function showMissions(target) {
       currentI = (missionList[i]['displayname']) ? missionList[i]['displayname'] : 'Untargeted';
       currentId = missionList[i]['instrumentid'];
       //currentT = Number(missionList[i]['total']) - Number(missionList[i]['errors']);
-      currentT = Number(missionList[i]['image_count']);
-      currentE = Number(missionList[i]['errors']);
+      currentT = Number(missionList[i]['image_count']) - Number(missionList[i]['nofootprints']);
+      currentE = Number(missionList[i]['nofootprints']);
       currentIClean = cleanStr(currentI);
       instruments[currentId] = [];
       instruments[currentId]['name'] = currentI;

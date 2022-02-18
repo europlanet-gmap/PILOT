@@ -164,11 +164,13 @@ class upcQuery {
 	$mappedSearch = in_array($iVal, $this->mappedArray);
 	$unmappedSearch = in_array($iVal, $this->unmappedArray);
 	if ($mappedSearch && !$unmappedSearch) {
-	  $instrumentWhereClause .= "AND s.err_flag = 'f') ";
+	  //$instrumentWhereClause .= "AND s.err_flag = 'f') ";
+	  $instrumentWhereClause .= "AND s.isisfootprint IS NOT NULL) ";
 	} else if ($unmappedSearch && !$mappedSearch) {
-	  $instrumentWhereClause .= "AND s.err_flag = 't') ";
+	  //$instrumentWhereClause .= "AND s.err_flag = 't') ";
+	  $instrumentWhereClause .= "AND s.isisfootprint IS NULL) ";
 	} else if ($unmappedSearch && $mappedSearch) {
-	  //$instrumentWhereClause .= ') ';
+ 	  //$instrumentWhereClause .= ') '; 
 	}
       }
       $instrumentWhereClause .=  ') ';
@@ -243,15 +245,22 @@ class upcQuery {
 
 
     //CHECK FOR FILTER
+    $filterJoin = '';
     $filterWhereClause = '';
     if (isset($this->filterArray) && (count($this->filterArray) > 0)) {
-      //$filterJoin = 'JOIN meta_bands AS mb ON (d.upcid = mb.upcid) '; 
+      $filterJoin = 'JOIN json_keywords AS fTable ON (d.upcid = fTable.upcid) '; 
       foreach ($this->filterArray as $iKey => $iVal) {
-	$filterWhereClause .= 'AND ((d.instrumentid != ' . $iKey . ') OR (d.upcid IN (SELECT mb.upcid FROM meta_bands mb WHERE ';
+	//$filterWhereClause .= 'AND ((d.instrumentid != ' . $iKey . ') OR (d.upcid IN (SELECT mb.upcid FROM meta_bands mb WHERE ';
+	$filterWhereClause .= 'AND ((d.instrumentid != ' . $iKey . ") OR (fTable.jsonkeywords->'caminfo'->'isislabel'->'isiscube'->'bandbin'->'center'->> 0 IN ( ";
+	//$thumbnailSelect = ", thumbnailTable.jsonkeywords::jsonb->'thumbnail' AS thumbnailurl ";
+	//$thumbnailJoin = 'LEFT JOIN json_keywords AS thumbnailTable ON (d.upcid = thumbnailTable.upcid) '; 
+
 	$filterOrs = '';
 	foreach ($iVal as $fKey => $fVal) {
-	  $filterOrs .= ($filterOrs == '') ? '' : 'OR ';
-	  $filterOrs .=   "(mb.filter = '" . $fVal . "') ";
+	  //$filterOrs .= ($filterOrs == '') ? '' : 'OR ';
+	  //$filterOrs .=   "(mb.filter = '" . $fVal . "') ";
+	  if ($filterOrs != '') {$filterOrs .= ",";}
+	  $filterOrs .=  "'" .  $fVal . "'";
 	}
 	$filterWhereClause .= $filterOrs . '))) ';
       }
@@ -406,6 +415,7 @@ class upcQuery {
       $orderByJoin .
       $constraintJoin . 
       $thumbnailJoin .
+      $filterJoin . 
       'WHERE TRUE ' . 
       $geoWhereClause . 
       $instrumentWhereClause .
@@ -427,6 +437,7 @@ class upcQuery {
       $instrumentJoin .
       $geoJoin . 
       $constraintJoin .
+      $filterJoin . 
       'WHERE TRUE ' . 
       $geoWhereClause . 
       $instrumentWhereClause .

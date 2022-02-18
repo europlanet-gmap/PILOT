@@ -1,4 +1,6 @@
 
+var bandStats = [];
+
 
 //constructor
 function PilotConstrain() {
@@ -23,7 +25,6 @@ PilotConstrain.prototype.cleanId = function(oldId) {
 
 
 PilotConstrain.prototype.clear = function(id) {
-  console.log('pilotconstrain.clear. . . ');
   if (id) {
     var iDiv = '#iTab' + id;
     $(iDiv).html('');
@@ -45,6 +46,25 @@ PilotConstrain.prototype.enable = function(limits)  {
   $('#missionList input:checked').each(function(i) {
 					 $('constraintSelect').append('<option value="' + i + '" />');
 				       });
+};
+
+
+PilotConstrain.prototype.displayBands = function(instrumentId, json)  {
+
+  var bands = json[0]['json_agg'];
+  bands.sort(function (a, b) {return a.center - b.center;});
+  if (!bands[0].center) {bands.shift();}
+  //console.log(bands);
+
+  if (bands.length > 1) {
+    for (var i=0; i< bands.length; i++) {
+      //console.log('filter ' + bands[i]['center']);
+      if (bands[i]['center']) {
+        var bandsTXT = (bands[i]['filtername']) ? bands[i]['filtername'] : (i+1);
+        $('#filter' + instrumentId).append($("<option></option>").attr("value",  bands[i]['center']).text(bandsTXT + '  (' + bands[i]['center'] + ')'));
+      }
+    }
+  }
 };
 
 
@@ -74,6 +94,21 @@ PilotConstrain.prototype.errorPanel = function(id)  {
     $(e).html('');
   }
 };
+
+
+PilotConstrain.prototype.getBandStats = function(instrumentId, bString) {
+  console.log('pilotconstrain getbandstats ' + bString);
+  bObj = bandStats.find(b => b.name === bString);
+  if (bObj === undefined) { 
+    console.log('stats NOT FOUND. . . ');
+    var pa = new pilotAJAX();
+    json = pa.bandStats(instrumentId, bString);
+  } else {
+    console.log('stats FOUND. . . ');
+    console.log(bObj);
+    this.displayBands(instrumentId, bObj.stats);
+  }
+}
 
 
 PilotConstrain.prototype.histogram = function(e) {
@@ -204,11 +239,17 @@ PilotConstrain.prototype.show = function(id)  {
       }
     }
   }
-/*
+*/
+ /*
   var bLength = bands.length;
   if (bLength > 1) {
-    $('<span/>', {html: '<h3 class="advTitleSelects">Filter (center wavelength) </h3><span class="orangeText">Select one or more. . . </span>'}).appendTo(eR);
-    $('<select/>', {id: 'filter' + id, multiple: 'multiple', size: '10', 'class': 'filter', name: 'filter' + id + '[]'}).appendTo(eR);
+*/
+  var bString = ms['mission'].replace(/\s+/g,"_").toLowerCase() + '_' + ms['displayname'].toLowerCase();
+  $('<span/>', {html: '<h3 class="advTitleSelects">Filter (center wavelength) </h3><span class="orangeText">Select one or more. . . </span>'}).appendTo(eR);
+  $('<select/>', {id: 'filter' + id, multiple: 'multiple', size: '10', 'class': 'filter', name: 'filter' + id + '[]'}).appendTo(eR);
+  this.getBandStats(id, bString);
+
+/*
     var timer;
     $('#filter' + id).change(function(){
 			       window.clearTimeout(timer);
@@ -216,10 +257,9 @@ PilotConstrain.prototype.show = function(id)  {
 							 pilotConstrain.searchAlertOn();
 						       },1000);
 			     });
-    $('#filter' + id).append($("<option></option>").attr("value",'none').text('No selection'));
-    for (var i=0; i< bands.length; i++) {
-      $('#filter' + id).append($("<option></option>").attr("value",  bands[i]['filter']).text(bands[i]['filter'] + '  (' + bands[i]['centerwave'] + ')'));
-    }
+*/
+    //$('#filter' + id).append($("<option></option>").attr("value",'none').text('No selection'));
+/*
   }
 */
   //this.errorPanel(id);

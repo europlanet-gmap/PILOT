@@ -41,6 +41,25 @@ pilotAJAX.prototype.abortResults = function() {
 };
 
 
+pilotAJAX.prototype.bandStats = function(id, bString) {
+
+    $.ajax({
+      url: this.upcAjaxURLNoParams,
+      dataType: 'json',
+      data: 'act=bandStatsAjaxGet&path=' + bString,
+      bString: bString,
+      instrumentId: id,
+      type: 'POST',
+      success: function(json) {
+        console.log('pilotAJAX bandstats return. . . ' + this.bString);
+	pilotConstrain.displayBands(this.instrumentId, json);
+        bandStats.push({'name': this.bString, 'stats': json});
+      }
+    });
+  return (null);
+};
+
+
 pilotAJAX.prototype.bigImage = function(id, thumbnailurl) {
 
   var encodedId = encodeURIComponent(id);

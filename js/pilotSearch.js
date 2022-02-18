@@ -207,9 +207,10 @@ PilotSearch.prototype.getTitle = function(id) {
 
 PilotSearch.prototype.highlightFootprint = function(id) {
 
-  this.astroVector.unhighlightAll();
-  if (this.imageArray[id]['index'] != null) {
-    this.astroVector.highlight(this.imageArray[id]['index']);
+  if (this.astroVector) {this.astroVector.unhighlightAll();}
+  var i = this.imageArray[id];
+  if (i['index'] && i['footprint']) {
+    this.astroVector.highlight(i['index']);
   }
 };
 
@@ -449,7 +450,7 @@ PilotSearch.prototype.render = function(id, dontShowMap, dontCenter) {
   }
 
   var i = this.imageArray[id];
-  if (i['footprint'] == this.badGeometry) {
+  if (!i['footprint']) {
     return;
   }
   if (!dontShowMap) {
@@ -754,8 +755,9 @@ PilotSearch.prototype.total = function(total) {
 
 
 PilotSearch.prototype.unHighlightFootprint = function(id) {
-  if (this.imageArray[id]['index'] != null) {
-    this.astroVector.unhighlight(this.imageArray[id]['index']);
+  var i = this.imageArray[id];
+  if (i['index'] && i['footprint']) {
+    this.astroVector.unhighlight(i['index']);
   }
 };
 
